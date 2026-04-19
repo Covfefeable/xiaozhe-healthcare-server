@@ -15,5 +15,5 @@ node_modules/
 out/
 dist/
 coverage/
+docker/volumes/
 *.log
-

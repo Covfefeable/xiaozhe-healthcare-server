@@ -23,6 +23,8 @@ def get_engine_url():
 
 config.set_main_option("sqlalchemy.url", get_engine_url())
 target_db = current_app.extensions["migrate"].db
+table_prefix = current_app.config["DB_TABLE_PREFIX"]
+version_table = current_app.config["ALEMBIC_VERSION_TABLE"]
 
 
 def get_metadata():
@@ -31,9 +33,27 @@ def get_metadata():
     return target_db.metadata
 
 
+def include_name(name, type_, parent_names):
+    if type_ == "table":
+        return name == version_table or name.startswith(table_prefix)
+    return True
+
+
+def include_object(object_, name, type_, reflected, compare_to):
+    if type_ == "table":
+        return name == version_table or name.startswith(table_prefix)
+    return True
+
+
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(url=url, target_metadata=get_metadata(), literal_binds=True)
+    context.configure(
+        url=url,
+        target_metadata=get_metadata(),
+        literal_binds=True,
+        include_name=include_name,
+        include_object=include_object,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
@@ -57,6 +77,8 @@ def run_migrations_online():
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
+            include_name=include_name,
+            include_object=include_object,
             **conf_args,
         )
 
@@ -68,4 +90,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

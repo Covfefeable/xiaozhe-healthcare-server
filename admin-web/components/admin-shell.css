@@ -1,0 +1,106 @@
+.admin-shell {
+  min-height: 100vh;
+}
+
+.admin-shell__sider {
+  min-height: 100vh;
+  overflow: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 18px 0 48px rgba(16, 32, 31, 0.12);
+}
+
+.admin-shell__brand {
+  height: 88px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 22px;
+}
+
+.admin-shell__brand-mark {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #d8f3ef 0%, #99f6e4 100%);
+  color: #0f3f3a;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 0 14px 28px rgba(20, 184, 166, 0.22);
+}
+
+.admin-shell__brand-title,
+.admin-shell__brand-subtitle {
+  display: block;
+}
+
+.admin-shell__brand-title {
+  color: #ffffff !important;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.admin-shell__brand-subtitle {
+  color: rgba(255, 255, 255, 0.48) !important;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-shell__main {
+  min-width: 0;
+}
+
+.admin-shell__header {
+  height: 88px;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid rgba(218, 229, 234, 0.88);
+  backdrop-filter: blur(18px);
+}
+
+.admin-shell__title {
+  margin: 2px 0 0 !important;
+  color: #172033 !important;
+}
+
+.admin-shell__user {
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+
+.admin-shell__user:hover {
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.admin-shell__content {
+  min-height: calc(100vh - 88px);
+  padding: 28px;
+}
+
+.admin-shell__blank {
+  min-height: calc(100vh - 144px);
+  border: 1px solid rgba(218, 229, 234, 0.92);
+  box-shadow: 0 18px 48px rgba(23, 32, 51, 0.06);
+}
+
+@media (max-width: 768px) {
+  .admin-shell__sider {
+    position: fixed !important;
+    z-index: 20;
+  }
+
+  .admin-shell__header {
+    padding: 0 16px;
+  }
+
+  .admin-shell__content {
+    padding: 18px;
+  }
+}

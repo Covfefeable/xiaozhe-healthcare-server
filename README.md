@@ -12,7 +12,10 @@
 - 两套服务端分别独立部署、独立配置、独立迁移
 - 两套服务端共用同一个 PostgreSQL 实例
 - 两套服务端共用同一个 Redis 实例
-- PostgreSQL 中使用同一个数据库，通过不同业务表共同存储
+- PostgreSQL 中使用同一个数据库：`xiaozhe_medical`
+- 两套服务端使用不同 Alembic 版本表，避免默认 `alembic_version` 冲突
+- 小程序服务端表名默认使用 `miniapp_` 前缀，Admin 服务端表名默认使用 `admin_` 前缀
+- 公共表建议使用 `shared_` 前缀，并明确只由一个迁移入口负责创建和变更
 - 两套服务端采用相同 Flask 分层：
   - `routes`：HTTP 路由入口
   - `controllers`：请求编排

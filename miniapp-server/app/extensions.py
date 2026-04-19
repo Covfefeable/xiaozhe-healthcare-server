@@ -9,5 +9,10 @@ migrate = Migrate()
 
 def init_extensions(app) -> None:
     db.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(
+        app,
+        db,
+        compare_type=True,
+        version_table=app.config["ALEMBIC_VERSION_TABLE"],
+    )
     app.extensions["redis"] = Redis.from_url(app.config["REDIS_URL"])

@@ -25,3 +25,11 @@
 ## 健康检查
 
 `GET /api/health`
+
+## 同库迁移约定
+
+当前项目与 `miniapp-server` 共用同一个 PostgreSQL database。为避免迁移冲突：
+
+- 本服务使用 `admin_alembic_version` 作为 Alembic 版本表
+- 本服务业务表名必须使用 `admin_` 前缀
+- 迁移自动生成会忽略不符合 `admin_` 前缀的表

@@ -20,9 +20,10 @@ services:
       FLASK_ENV: production
       APP_ENV: production
       SECRET_KEY: ${MINIAPP_SECRET_KEY:-replace-miniapp-secret}
-      API_AUTH_TOKEN: ${MINIAPP_API_AUTH_TOKEN:-}
       DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${DB_DATABASE:-xiaozhe_medical}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ALEMBIC_VERSION_TABLE: ${MINIAPP_ALEMBIC_VERSION_TABLE:-miniapp_alembic_version}
+      DB_TABLE_PREFIX: ${MINIAPP_DB_TABLE_PREFIX:-miniapp_}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
     depends_on:
@@ -54,11 +55,10 @@ services:
       FLASK_ENV: production
       APP_ENV: production
       SECRET_KEY: ${ADMIN_SECRET_KEY:-replace-admin-secret}
-      API_AUTH_TOKEN: ${ADMIN_API_AUTH_TOKEN:-}
       DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${DB_DATABASE:-xiaozhe_medical}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
-      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      ALEMBIC_VERSION_TABLE: ${ADMIN_ALEMBIC_VERSION_TABLE:-admin_alembic_version}
+      DB_TABLE_PREFIX: ${ADMIN_DB_TABLE_PREFIX:-admin_}
     depends_on:
       postgres:
         condition: service_healthy
