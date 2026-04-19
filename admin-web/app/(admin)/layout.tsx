@@ -2,10 +2,14 @@ import { AdminShell } from "@/components/admin-shell";
 import { AuthGuard } from "@/components/auth-guard";
 
 
-export default function HomePage() {
+export default function AdminLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <AuthGuard>
-      <AdminShell />
+      <AdminShell>{children}</AdminShell>
     </AuthGuard>
   );
 }

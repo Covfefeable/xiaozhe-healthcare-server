@@ -24,7 +24,7 @@ import {
   theme,
 } from "antd";
 import zhCN from "antd/locale/zh_CN";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { logout } from "@/lib/api";
@@ -62,15 +62,16 @@ const menuItems = [
 ];
 
 type AdminShellProps = {
-  activeKey?: "home" | "products";
   children?: React.ReactNode;
 };
 
-export function AdminShell({ activeKey = "home", children }: AdminShellProps) {
+export function AdminShell({ children }: AdminShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [messageApi, contextHolder] = message.useMessage();
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<AdminUser | null>(null);
+  const activeKey = pathname.startsWith("/products") ? "products" : "home";
 
   useEffect(() => {
     setUser(getStoredUser());
