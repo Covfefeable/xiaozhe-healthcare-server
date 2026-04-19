@@ -4,8 +4,7 @@ set -e
 
 if [ "$RUN_MIGRATIONS" = "true" ]; then
     echo "Running database migrations..."
-    flask db upgrade
+    uv run flask db upgrade
 fi
 
 exec "$@"
-

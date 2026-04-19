@@ -7,12 +7,12 @@
 - Flask
 - Flask-SQLAlchemy
 - Flask-Migrate
+- uv
 - PostgreSQL
 - Redis
 
 ## 目录说明
 
-- `app/`：应用主目录
 - `app/routes/`：路由层，负责 HTTP 入口与参数读取
 - `app/controllers/`：控制层，负责请求编排
 - `app/services/`：服务层，负责业务逻辑
@@ -20,8 +20,16 @@
 - `app/tasks/`：后台任务预留
 - `app/utils/`：通用工具，例如统一响应
 - `migrations/`：数据库迁移目录
-- `wsgi.py`：WSGI 入口
 - `manage.py`：开发入口
+- `wsgi.py`：WSGI 入口
+
+## 本地开发
+
+```bash
+uv sync
+uv run flask --app app db upgrade
+uv run python manage.py
+```
 
 ## 健康检查
 
@@ -34,3 +42,4 @@
 - 本服务使用 `miniapp_alembic_version` 作为 Alembic 版本表
 - 本服务业务表名必须使用 `miniapp_` 前缀
 - 迁移自动生成会忽略不符合 `miniapp_` 前缀的表
+

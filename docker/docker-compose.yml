@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-miniapp-server
     command: >
-      gunicorn
+      uv run gunicorn
       --bind 0.0.0.0:${MINIAPP_API_PORT:-5001}
       --workers ${SERVER_WORKER_AMOUNT:-1}
       --worker-class ${SERVER_WORKER_CLASS:-gevent}
@@ -40,7 +40,7 @@ services:
       dockerfile: Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-admin-server
     command: >
-      gunicorn
+      uv run gunicorn
       --bind 0.0.0.0:${ADMIN_API_PORT:-5002}
       --workers ${SERVER_WORKER_AMOUNT:-1}
       --worker-class ${SERVER_WORKER_CLASS:-gevent}
