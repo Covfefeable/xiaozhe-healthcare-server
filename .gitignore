@@ -11,9 +11,11 @@ env/
 .env.local
 .env.*.local
 node_modules/
+.pnpm-store/
 .next/
 out/
 dist/
 coverage/
 docker/volumes/
+*.tsbuildinfo
 *.log

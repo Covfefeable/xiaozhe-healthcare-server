@@ -3,7 +3,6 @@ services:
     build:
       context: ../miniapp-server
       dockerfile: Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-miniapp-server
     command: >
       uv run gunicorn
       --bind 0.0.0.0:${MINIAPP_API_PORT:-5001}
@@ -20,7 +19,7 @@ services:
       FLASK_ENV: production
       APP_ENV: production
       SECRET_KEY: ${MINIAPP_SECRET_KEY:-replace-miniapp-secret}
-      DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${DB_DATABASE:-xiaozhe_medical}
+      DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@postgres:5432/${DB_DATABASE:-xiaozhe_medical}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       ALEMBIC_VERSION_TABLE: ${MINIAPP_ALEMBIC_VERSION_TABLE:-miniapp_alembic_version}
       DB_TABLE_PREFIX: ${MINIAPP_DB_TABLE_PREFIX:-miniapp_}
@@ -38,7 +37,6 @@ services:
     build:
       context: ../admin-server
       dockerfile: Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-admin-server
     command: >
       uv run gunicorn
       --bind 0.0.0.0:${ADMIN_API_PORT:-5002}
@@ -55,7 +53,11 @@ services:
       FLASK_ENV: production
       APP_ENV: production
       SECRET_KEY: ${ADMIN_SECRET_KEY:-replace-admin-secret}
-      DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${DB_DATABASE:-xiaozhe_medical}
+      JWT_SECRET_KEY: ${ADMIN_JWT_SECRET_KEY:-replace-admin-jwt-secret}
+      JWT_ACCESS_TOKEN_EXPIRES: ${ADMIN_JWT_ACCESS_TOKEN_EXPIRES:-7200}
+      ALLOW_REGISTER: ${ADMIN_ALLOW_REGISTER:-false}
+      CORS_ORIGINS: ${ADMIN_CORS_ORIGINS:-http://localhost:3000}
+      DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@postgres:5432/${DB_DATABASE:-xiaozhe_medical}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       ALEMBIC_VERSION_TABLE: ${ADMIN_ALEMBIC_VERSION_TABLE:-admin_alembic_version}
       DB_TABLE_PREFIX: ${ADMIN_DB_TABLE_PREFIX:-admin_}
@@ -85,7 +87,6 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg15
-    container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-postgres
     command: >
       postgres
       -c max_connections=${POSTGRES_MAX_CONNECTIONS:-100}
@@ -99,8 +100,6 @@ services:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-xiaozhe123456}
       POSTGRES_DB: ${DB_DATABASE:-xiaozhe_medical}
-    ports:
-      - "${DB_PORT:-5432}:5432"
     volumes:
       - ./volumes/postgres:/var/lib/postgresql/data
     healthcheck:
@@ -113,9 +112,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-redis
-    ports:
-      - "6379:6379"
     volumes:
       - ./volumes/redis:/data
     healthcheck:

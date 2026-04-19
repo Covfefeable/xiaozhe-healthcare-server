@@ -3,6 +3,14 @@ import os
 
 class BaseConfig:
     SECRET_KEY = os.getenv("SECRET_KEY", "replace-this-secret")
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
+    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", "7200"))
+    ALLOW_REGISTER = os.getenv("ALLOW_REGISTER", "false").lower() == "true"
+    CORS_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+        if origin.strip()
+    ]
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",
         "postgresql+psycopg://postgres:postgres@localhost:5432/xiaozhe_medical",

@@ -1,6 +1,11 @@
 import { AdminShell } from "@/components/admin-shell";
+import { AuthGuard } from "@/components/auth-guard";
 
 
 export default function HomePage() {
-  return <AdminShell />;
+  return (
+    <AuthGuard>
+      <AdminShell />
+    </AuthGuard>
+  );
 }

@@ -33,6 +33,30 @@ uv run flask --app app db upgrade
 uv run python manage.py
 ```
 
+## 后台登录
+
+第一版后台登录只包含账号、密码、启用状态和最近登录时间，不包含角色、权限、超级管理员和头像。
+
+认证接口：
+
+- `POST /api/auth/login`
+- `POST /api/auth/register`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+- `GET /api/auth/config`
+
+注册接口受环境变量控制：
+
+```env
+ALLOW_REGISTER=false
+```
+
+创建管理员账号推荐使用 CLI：
+
+```bash
+uv run flask --app app admin create-user --username admin --display-name 管理员
+```
+
 ## 健康检查
 
 `GET /api/health`
@@ -44,4 +68,3 @@ uv run python manage.py
 - 本服务使用 `admin_alembic_version` 作为 Alembic 版本表
 - 本服务业务表名必须使用 `admin_` 前缀
 - 迁移自动生成会忽略不符合 `admin_` 前缀的表
-

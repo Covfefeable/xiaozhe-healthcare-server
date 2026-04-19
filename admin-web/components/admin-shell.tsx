@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserSwitchOutlined,
@@ -16,16 +17,50 @@ import {
   Layout,
   Space,
   Typography,
+  message,
   theme,
 } from "antd";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
+import { logout } from "@/lib/api";
+import { clearSession, getStoredUser, type AdminUser } from "@/lib/auth";
 import "./admin-shell.css";
 
 const { Header, Sider, Content } = Layout;
 
+const text = {
+  brandMark: "\u54f2",
+  brandName: "\u5c0f\u54f2\u533b\u7597",
+  home: "\u9996\u9875",
+  collapse: "\u6536\u8d77\u83dc\u5355",
+  expand: "\u5c55\u5f00\u83dc\u5355",
+  logout: "\u9000\u51fa\u767b\u5f55",
+  logoutDone: "\u5df2\u9000\u51fa\u767b\u5f55",
+  admin: "\u7ba1\u7406\u5458",
+};
+
 export function AdminShell() {
+  const router = useRouter();
+  const [messageApi, contextHolder] = message.useMessage();
   const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState<AdminUser | null>(null);
+
+  useEffect(() => {
+    setUser(getStoredUser());
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Local cleanup is enough for stateless token logout.
+    } finally {
+      clearSession();
+      messageApi.success(text.logoutDone);
+      router.replace("/login");
+    }
+  };
 
   return (
     <ConfigProvider
@@ -46,6 +81,7 @@ export function AdminShell() {
         },
       }}
     >
+      {contextHolder}
       <Layout className="admin-shell">
         <Sider
           className="admin-shell__sider"
@@ -55,11 +91,11 @@ export function AdminShell() {
           width={264}
         >
           <div className="admin-shell__brand">
-            <div className="admin-shell__brand-mark">哲</div>
+            <div className="admin-shell__brand-mark">{text.brandMark}</div>
             {!collapsed && (
               <div>
                 <Typography.Text className="admin-shell__brand-title">
-                  小哲医疗
+                  {text.brandName}
                 </Typography.Text>
                 <Typography.Text className="admin-shell__brand-subtitle">
                   Admin Console
@@ -74,7 +110,7 @@ export function AdminShell() {
             <Flex align="center" justify="space-between" gap={16}>
               <Space size={16}>
                 <Button
-                  aria-label={collapsed ? "展开菜单" : "收起菜单"}
+                  aria-label={collapsed ? text.expand : text.collapse}
                   icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                   onClick={() => setCollapsed((value) => !value)}
                   shape="circle"
@@ -83,32 +119,34 @@ export function AdminShell() {
                 <div>
                   <Breadcrumb
                     items={[
-                      { title: "小哲医疗" },
-                      { title: "首页" },
+                      { title: text.brandName },
+                      { title: text.home },
                     ]}
                   />
                   <Typography.Title level={4} className="admin-shell__title">
-                    首页
+                    {text.home}
                   </Typography.Title>
                 </div>
               </Space>
 
-              <Space size={12}>
-                <Dropdown
-                  menu={{
-                    items: [
-                      { key: "profile", label: "账号信息" },
-                      { key: "logout", label: "退出登录" },
-                    ],
-                  }}
-                  placement="bottomRight"
-                >
-                  <Space className="admin-shell__user">
-                    <Avatar icon={<UserSwitchOutlined />} />
-                    <span>管理员</span>
-                  </Space>
-                </Dropdown>
-              </Space>
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: "logout",
+                      icon: <LogoutOutlined />,
+                      label: text.logout,
+                      onClick: handleLogout,
+                    },
+                  ],
+                }}
+                placement="bottomRight"
+              >
+                <Space className="admin-shell__user">
+                  <Avatar icon={<UserSwitchOutlined />} />
+                  <span>{user?.display_name ?? text.admin}</span>
+                </Space>
+              </Dropdown>
             </Flex>
           </Header>
 
@@ -120,3 +158,4 @@ export function AdminShell() {
     </ConfigProvider>
   );
 }
+

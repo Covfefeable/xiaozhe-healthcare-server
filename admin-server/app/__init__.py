@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask
 
 from .config import config_by_name
+from .commands import register_commands
 from .extensions import init_extensions
 
 
@@ -21,5 +22,6 @@ def create_app(config_name: str | None = None) -> Flask:
     from .routes import api_bp
 
     app.register_blueprint(api_bp)
+    register_commands(app)
 
     return app
