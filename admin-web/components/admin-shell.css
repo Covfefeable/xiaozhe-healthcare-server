@@ -46,6 +46,33 @@
   font-size: 12px;
 }
 
+.admin-shell__menu {
+  padding: 8px 12px;
+  border-inline-end: 0 !important;
+  background: transparent !important;
+}
+
+.admin-shell__menu .ant-menu-item {
+  height: 42px;
+  margin: 4px 0;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.admin-shell__menu .ant-menu-item:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+.admin-shell__menu .ant-menu-item-selected {
+  color: #0b3d38 !important;
+  background: #d8f3ef !important;
+}
+
+.admin-shell__menu .ant-menu-item-selected .ant-menu-item-icon {
+  color: #0b3d38 !important;
+}
+
 .admin-shell__main {
   min-width: 0;
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  AppstoreOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  ShoppingOutlined,
   UserSwitchOutlined,
 } from "@ant-design/icons";
 import {
@@ -15,11 +17,13 @@ import {
   Dropdown,
   Flex,
   Layout,
+  Menu,
   Space,
   Typography,
   message,
   theme,
 } from "antd";
+import zhCN from "antd/locale/zh_CN";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -34,6 +38,7 @@ const text = {
   brandName: "\u5c0f\u54f2\u533b\u7597",
   console: "\u540e\u53f0\u7ba1\u7406",
   home: "\u9996\u9875",
+  products: "\u4ea7\u54c1\u7ba1\u7406",
   emptyTitle: "\u6682\u65e0\u5185\u5bb9",
   emptyDescription: "\u8bf7\u4ece\u4e1a\u52a1\u9700\u6c42\u5f00\u59cb\u9010\u6b65\u642d\u5efa\u9875\u9762\u3002",
   collapse: "\u6536\u8d77\u83dc\u5355",
@@ -43,7 +48,25 @@ const text = {
   admin: "\u7ba1\u7406\u5458",
 };
 
-export function AdminShell() {
+const menuItems = [
+  {
+    key: "home",
+    icon: <AppstoreOutlined />,
+    label: text.home,
+  },
+  {
+    key: "products",
+    icon: <ShoppingOutlined />,
+    label: text.products,
+  },
+];
+
+type AdminShellProps = {
+  activeKey?: "home" | "products";
+  children?: React.ReactNode;
+};
+
+export function AdminShell({ activeKey = "home", children }: AdminShellProps) {
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
   const [collapsed, setCollapsed] = useState(false);
@@ -65,8 +88,13 @@ export function AdminShell() {
     }
   };
 
+  const handleMenuClick = ({ key }: { key: string }) => {
+    router.push(key === "products" ? "/products" : "/");
+  };
+
   return (
     <ConfigProvider
+      locale={zhCN}
       theme={{
         algorithm: theme.defaultAlgorithm,
         token: {
@@ -106,6 +134,14 @@ export function AdminShell() {
               </div>
             )}
           </div>
+          <Menu
+            className="admin-shell__menu"
+            items={menuItems}
+            mode="inline"
+            onClick={handleMenuClick}
+            selectedKeys={[activeKey]}
+            theme="dark"
+          />
         </Sider>
 
         <Layout className="admin-shell__main">
@@ -123,7 +159,7 @@ export function AdminShell() {
                   <Breadcrumb
                     items={[
                       { title: text.brandName },
-                      { title: text.home },
+                      { title: activeKey === "products" ? text.products : text.home },
                     ]}
                   />
                 </div>
@@ -151,14 +187,16 @@ export function AdminShell() {
           </Header>
 
           <Content className="admin-shell__content">
-            <Card className="admin-shell__blank">
-              <div className="admin-shell__empty">
-                <Typography.Title level={4}>{text.emptyTitle}</Typography.Title>
-                <Typography.Text type="secondary">
-                  {text.emptyDescription}
-                </Typography.Text>
-              </div>
-            </Card>
+            {children ?? (
+              <Card className="admin-shell__blank">
+                <div className="admin-shell__empty">
+                  <Typography.Title level={4}>{text.emptyTitle}</Typography.Title>
+                  <Typography.Text type="secondary">
+                    {text.emptyDescription}
+                  </Typography.Text>
+                </div>
+              </Card>
+            )}
           </Content>
         </Layout>
       </Layout>
