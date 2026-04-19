@@ -2,6 +2,7 @@
 
 import {
   AppstoreOutlined,
+  FileTextOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -39,6 +40,7 @@ const text = {
   console: "\u540e\u53f0\u7ba1\u7406",
   home: "\u9996\u9875",
   products: "\u4ea7\u54c1\u7ba1\u7406",
+  news: "\u8d44\u8baf\u7ba1\u7406",
   emptyTitle: "\u6682\u65e0\u5185\u5bb9",
   emptyDescription: "\u8bf7\u4ece\u4e1a\u52a1\u9700\u6c42\u5f00\u59cb\u9010\u6b65\u642d\u5efa\u9875\u9762\u3002",
   collapse: "\u6536\u8d77\u83dc\u5355",
@@ -59,6 +61,11 @@ const menuItems = [
     icon: <ShoppingOutlined />,
     label: text.products,
   },
+  {
+    key: "news",
+    icon: <FileTextOutlined />,
+    label: text.news,
+  },
 ];
 
 type AdminShellProps = {
@@ -71,7 +78,11 @@ export function AdminShell({ children }: AdminShellProps) {
   const [messageApi, contextHolder] = message.useMessage();
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<AdminUser | null>(null);
-  const activeKey = pathname.startsWith("/products") ? "products" : "home";
+  const activeKey = pathname.startsWith("/products")
+    ? "products"
+    : pathname.startsWith("/news")
+      ? "news"
+      : "home";
 
   useEffect(() => {
     setUser(getStoredUser());
@@ -90,7 +101,15 @@ export function AdminShell({ children }: AdminShellProps) {
   };
 
   const handleMenuClick = ({ key }: { key: string }) => {
-    router.push(key === "products" ? "/products" : "/");
+    if (key === "products") {
+      router.push("/products");
+      return;
+    }
+    if (key === "news") {
+      router.push("/news");
+      return;
+    }
+    router.push("/");
   };
 
   return (
@@ -160,7 +179,14 @@ export function AdminShell({ children }: AdminShellProps) {
                   <Breadcrumb
                     items={[
                       { title: text.brandName },
-                      { title: activeKey === "products" ? text.products : text.home },
+                      {
+                        title:
+                          activeKey === "products"
+                            ? text.products
+                            : activeKey === "news"
+                              ? text.news
+                              : text.home,
+                      },
                     ]}
                   />
                 </div>

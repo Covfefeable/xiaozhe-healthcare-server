@@ -139,3 +139,58 @@ export function publishProduct(id: number) {
 export function unpublishProduct(id: number) {
   return request<Product>(`/products/${id}/unpublish`, { method: "POST" });
 }
+
+export type NewsItem = {
+  id: number;
+  cover_image_url: string;
+  title: string;
+  published_at: string | null;
+  content_markdown: string;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type NewsListParams = {
+  keyword?: string;
+  page?: number;
+  page_size?: number;
+};
+
+export type NewsPayload = {
+  cover_image_url?: string;
+  title: string;
+  published_at: string;
+  content_markdown?: string;
+};
+
+export function getNewsList(params: NewsListParams = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, String(value));
+    }
+  });
+  const query = searchParams.toString();
+  return request<{
+    items: NewsItem[];
+    pagination: { page: number; page_size: number; total: number };
+  }>(`/news${query ? `?${query}` : ""}`);
+}
+
+export function createNews(data: NewsPayload) {
+  return request<NewsItem>("/news", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateNews(id: number, data: NewsPayload) {
+  return request<NewsItem>(`/news/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteNews(id: number) {
+  return request<null>(`/news/${id}`, { method: "DELETE" });
+}
