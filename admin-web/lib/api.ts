@@ -369,3 +369,99 @@ export function updateDoctor(id: number, data: DoctorPayload) {
 export function deleteDoctor(id: number) {
   return request<null>(`/doctors/${id}`, { method: "DELETE" });
 }
+
+export type StaffStatus = "active" | "inactive";
+
+export type StaffItem = {
+  id: number;
+  avatar_url: string;
+  name: string;
+  phone: string;
+  status: StaffStatus;
+  remark: string;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type StaffPayload = {
+  avatar_url?: string;
+  name: string;
+  phone: string;
+  status: StaffStatus;
+  remark?: string;
+};
+
+export type StaffListParams = {
+  keyword?: string;
+  status?: StaffStatus;
+  page?: number;
+  page_size?: number;
+};
+
+function buildQuery(params: Record<string, string | number | undefined>) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, String(value));
+    }
+  });
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+}
+
+function getStaffList(path: string, params: StaffListParams = {}) {
+  return request<{
+    items: StaffItem[];
+    pagination: { page: number; page_size: number; total: number };
+  }>(`${path}${buildQuery(params)}`);
+}
+
+function createStaff(path: string, data: StaffPayload) {
+  return request<StaffItem>(path, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+function updateStaff(path: string, id: number, data: StaffPayload) {
+  return request<StaffItem>(`${path}/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+function deleteStaff(path: string, id: number) {
+  return request<null>(`${path}/${id}`, { method: "DELETE" });
+}
+
+export function getAssistantList(params: StaffListParams = {}) {
+  return getStaffList("/assistants", params);
+}
+
+export function createAssistant(data: StaffPayload) {
+  return createStaff("/assistants", data);
+}
+
+export function updateAssistant(id: number, data: StaffPayload) {
+  return updateStaff("/assistants", id, data);
+}
+
+export function deleteAssistant(id: number) {
+  return deleteStaff("/assistants", id);
+}
+
+export function getCustomerServiceList(params: StaffListParams = {}) {
+  return getStaffList("/customer-services", params);
+}
+
+export function createCustomerService(data: StaffPayload) {
+  return createStaff("/customer-services", data);
+}
+
+export function updateCustomerService(id: number, data: StaffPayload) {
+  return updateStaff("/customer-services", id, data);
+}
+
+export function deleteCustomerService(id: number) {
+  return deleteStaff("/customer-services", id);
+}

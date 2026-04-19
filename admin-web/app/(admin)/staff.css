@@ -1,0 +1,48 @@
+.staff-page {
+  display: grid;
+  gap: 16px;
+}
+
+.staff-page__heading {
+  min-height: 44px;
+}
+
+.staff-page__heading .ant-typography {
+  margin: 0 !important;
+}
+
+.staff-page__filter,
+.staff-page__table {
+  border: 1px solid #e3ebea;
+  box-shadow: none;
+}
+
+.staff-page__filter .ant-form {
+  row-gap: 12px;
+}
+
+.staff-page__table .ant-card-body {
+  padding: 0;
+}
+
+.staff-page__table .ant-table-wrapper {
+  padding: 4px;
+}
+
+.staff-page__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.staff-page__avatar-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.staff-page__form-item {
+  flex: 1;
+}

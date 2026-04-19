@@ -48,6 +48,8 @@ const text = {
   personnel: "\u4eba\u5458\u7ba1\u7406",
   departments: "\u79d1\u5ba4\u7ba1\u7406",
   doctors: "\u533b\u751f\u7ba1\u7406",
+  assistants: "\u52a9\u7406\u7ba1\u7406",
+  customerServices: "\u5ba2\u670d\u7ba1\u7406",
   emptyTitle: "\u6682\u65e0\u5185\u5bb9",
   emptyDescription: "\u8bf7\u4ece\u4e1a\u52a1\u9700\u6c42\u5f00\u59cb\u9010\u6b65\u642d\u5efa\u9875\u9762\u3002",
   collapse: "\u6536\u8d77\u83dc\u5355",
@@ -88,6 +90,16 @@ const menuItems = [
         icon: <UserSwitchOutlined />,
         label: text.doctors,
       },
+      {
+        key: "assistants",
+        icon: <UserSwitchOutlined />,
+        label: text.assistants,
+      },
+      {
+        key: "customer-services",
+        icon: <UserSwitchOutlined />,
+        label: text.customerServices,
+      },
     ],
   },
   {
@@ -115,6 +127,10 @@ export function AdminShell({ children }: AdminShellProps) {
       ? "departments"
     : pathname.startsWith("/doctors")
       ? "doctors"
+    : pathname.startsWith("/assistants")
+      ? "assistants"
+    : pathname.startsWith("/customer-services")
+      ? "customer-services"
     : pathname.startsWith("/news")
       ? "news"
       : "home";
@@ -150,6 +166,14 @@ export function AdminShell({ children }: AdminShellProps) {
     }
     if (key === "doctors") {
       router.push("/doctors");
+      return;
+    }
+    if (key === "assistants") {
+      router.push("/assistants");
+      return;
+    }
+    if (key === "customer-services") {
+      router.push("/customer-services");
       return;
     }
     if (key === "news") {
@@ -237,6 +261,10 @@ export function AdminShell({ children }: AdminShellProps) {
                               ? text.departments
                             : activeKey === "doctors"
                               ? text.doctors
+                            : activeKey === "assistants"
+                              ? text.assistants
+                            : activeKey === "customer-services"
+                              ? text.customerServices
                             : activeKey === "news"
                               ? text.news
                               : text.home,
