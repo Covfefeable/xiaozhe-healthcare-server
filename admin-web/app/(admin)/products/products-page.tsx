@@ -18,6 +18,7 @@ import {
   type TablePaginationConfig,
   type TableProps,
 } from "antd";
+import MarkdownIt from "markdown-it";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
@@ -33,7 +34,12 @@ import {
   type ProductStatus,
 } from "@/lib/api";
 
-const MarkdownEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+const MdEditor = dynamic(() => import("react-markdown-editor-lite"), { ssr: false });
+const mdParser = new MarkdownIt({
+  breaks: true,
+  html: false,
+  linkify: true,
+});
 
 type FilterValues = {
   keyword?: string;
@@ -84,6 +90,15 @@ function toPayload(values: ProductFormValues): ProductPayload {
     detail_markdown: values.detail_markdown ?? "",
     sort_order: values.sort_order ?? 0,
   };
+}
+
+function fileToBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 export function ProductsPage() {
@@ -288,6 +303,11 @@ export function ProductsPage() {
     void loadProducts(nextPagination.current, nextPagination.pageSize);
   };
 
+  const handleUploadImage = async (file: File) => {
+    console.log(file)
+    return fileToBase64(file);
+  };
+
   return (
     <>
       {contextHolder}
@@ -387,17 +407,23 @@ export function ProductsPage() {
           <Flex gap={16}>
             <Form.Item
               label="价格"
-              name="price_yuan"
-              rules={[{ required: true, message: "请输入价格" }]}
               className="products-page__form-item"
             >
-              <InputNumber
-                addonBefore="¥"
-                min={0}
-                precision={2}
-                placeholder="0.00"
-                style={{ width: "100%" }}
-              />
+              <Space.Compact style={{ width: "100%" }}>
+                <Button disabled>¥</Button>
+                <Form.Item
+                  name="price_yuan"
+                  noStyle
+                  rules={[{ required: true, message: "请输入价格" }]}
+                >
+                  <InputNumber
+                    min={0}
+                    precision={2}
+                    placeholder="0.00"
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
+              </Space.Compact>
             </Form.Item>
             <Form.Item
               label="有效期"
@@ -412,11 +438,20 @@ export function ProductsPage() {
             </Form.Item>
           </Flex>
           <Form.Item label="产品详情">
-            <MarkdownEditor
-              data-color-mode="light"
-              height={320}
-              onChange={(value) => setMarkdownValue(value ?? "")}
-              preview="edit"
+            <MdEditor
+              config={{
+                canView: {
+                  fullScreen: false,
+                  hideMenu: false,
+                  html: true,
+                  menu: true,
+                  md: true,
+                },
+              }}
+              onChange={({ text }) => setMarkdownValue(text)}
+              renderHTML={(text) => mdParser.render(text)}
+              style={{ height: 320 }}
+              onImageUpload={handleUploadImage}
               value={markdownValue}
             />
           </Form.Item>

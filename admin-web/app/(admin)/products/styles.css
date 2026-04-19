@@ -37,14 +37,23 @@
   flex: 1;
 }
 
-.w-md-editor {
+.rc-md-editor {
   border-radius: 10px;
-  box-shadow: none !important;
   border: 1px solid #d9e3e1;
+  overflow: hidden;
 }
 
-.w-md-editor-toolbar {
-  border-radius: 10px 10px 0 0;
+.rc-md-editor .rc-md-navigation {
+  border-bottom: 1px solid #edf2f1;
+  background: #fbfdfd;
+}
+
+.rc-md-editor .editor-container {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.rc-md-editor .section-container {
+  border-color: #edf2f1;
 }
 
 @media (max-width: 768px) {

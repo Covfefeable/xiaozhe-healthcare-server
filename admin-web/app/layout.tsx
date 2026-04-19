@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "@ant-design/v5-patch-for-react-19";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
-import "@uiw/react-md-editor/markdown-editor.css";
-import "@uiw/react-markdown-preview/markdown.css";
+import "react-markdown-editor-lite/lib/index.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
