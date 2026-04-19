@@ -247,3 +247,125 @@ export function updateBanner(id: number, data: BannerPayload) {
 export function deleteBanner(id: number) {
   return request<null>(`/banners/${id}`, { method: "DELETE" });
 }
+
+export type DepartmentItem = {
+  id: number;
+  name: string;
+  description: string;
+  sort_order: number;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type DepartmentPayload = {
+  name: string;
+  description?: string;
+  sort_order?: number;
+};
+
+export type DepartmentListParams = {
+  keyword?: string;
+  page?: number;
+  page_size?: number;
+};
+
+export function getDepartmentList(params: DepartmentListParams = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, String(value));
+    }
+  });
+  const query = searchParams.toString();
+  return request<{
+    items: DepartmentItem[];
+    pagination: { page: number; page_size: number; total: number };
+  }>(`/departments${query ? `?${query}` : ""}`);
+}
+
+export function createDepartment(data: DepartmentPayload) {
+  return request<DepartmentItem>("/departments", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateDepartment(id: number, data: DepartmentPayload) {
+  return request<DepartmentItem>(`/departments/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteDepartment(id: number) {
+  return request<null>(`/departments/${id}`, { method: "DELETE" });
+}
+
+export type DoctorItem = {
+  id: number;
+  department_id: number;
+  department_name: string;
+  avatar_url: string;
+  name: string;
+  phone: string;
+  title: string;
+  hospital: string;
+  summary: string;
+  specialty_tags: string[];
+  introduction: string;
+  sort_order: number;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type DoctorPayload = {
+  department_id: number;
+  avatar_url?: string;
+  name: string;
+  phone: string;
+  title?: string;
+  hospital?: string;
+  summary?: string;
+  specialty_tags?: string[];
+  introduction?: string;
+  sort_order?: number;
+};
+
+export type DoctorListParams = {
+  keyword?: string;
+  department_id?: number;
+  page?: number;
+  page_size?: number;
+};
+
+export function getDoctorList(params: DoctorListParams = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, String(value));
+    }
+  });
+  const query = searchParams.toString();
+  return request<{
+    items: DoctorItem[];
+    pagination: { page: number; page_size: number; total: number };
+  }>(`/doctors${query ? `?${query}` : ""}`);
+}
+
+export function createDoctor(data: DoctorPayload) {
+  return request<DoctorItem>("/doctors", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateDoctor(id: number, data: DoctorPayload) {
+  return request<DoctorItem>(`/doctors/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteDoctor(id: number) {
+  return request<null>(`/doctors/${id}`, { method: "DELETE" });
+}

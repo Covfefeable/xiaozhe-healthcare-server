@@ -1,0 +1,48 @@
+.doctors-page {
+  display: grid;
+  gap: 16px;
+}
+
+.doctors-page__heading {
+  min-height: 44px;
+}
+
+.doctors-page__heading .ant-typography {
+  margin: 0 !important;
+}
+
+.doctors-page__filter,
+.doctors-page__table {
+  border: 1px solid #e3ebea;
+  box-shadow: none;
+}
+
+.doctors-page__filter .ant-form {
+  row-gap: 12px;
+}
+
+.doctors-page__table .ant-card-body {
+  padding: 0;
+}
+
+.doctors-page__table .ant-table-wrapper {
+  padding: 4px;
+}
+
+.doctors-page__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.doctors-page__avatar-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.doctors-page__form-item {
+  flex: 1;
+}

@@ -2,12 +2,14 @@
 
 import {
   AppstoreOutlined,
+  ApartmentOutlined,
   FileTextOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   PictureOutlined,
   ShoppingOutlined,
+  TeamOutlined,
   UserSwitchOutlined,
 } from "@ant-design/icons";
 import {
@@ -43,6 +45,9 @@ const text = {
   products: "\u4ea7\u54c1\u7ba1\u7406",
   banners: "Banner \u7ba1\u7406",
   news: "\u8d44\u8baf\u7ba1\u7406",
+  personnel: "\u4eba\u5458\u7ba1\u7406",
+  departments: "\u79d1\u5ba4\u7ba1\u7406",
+  doctors: "\u533b\u751f\u7ba1\u7406",
   emptyTitle: "\u6682\u65e0\u5185\u5bb9",
   emptyDescription: "\u8bf7\u4ece\u4e1a\u52a1\u9700\u6c42\u5f00\u59cb\u9010\u6b65\u642d\u5efa\u9875\u9762\u3002",
   collapse: "\u6536\u8d77\u83dc\u5355",
@@ -69,6 +74,23 @@ const menuItems = [
     label: text.banners,
   },
   {
+    key: "personnel",
+    icon: <TeamOutlined />,
+    label: text.personnel,
+    children: [
+      {
+        key: "departments",
+        icon: <ApartmentOutlined />,
+        label: text.departments,
+      },
+      {
+        key: "doctors",
+        icon: <UserSwitchOutlined />,
+        label: text.doctors,
+      },
+    ],
+  },
+  {
     key: "news",
     icon: <FileTextOutlined />,
     label: text.news,
@@ -89,6 +111,10 @@ export function AdminShell({ children }: AdminShellProps) {
     ? "products"
     : pathname.startsWith("/banners")
       ? "banners"
+    : pathname.startsWith("/departments")
+      ? "departments"
+    : pathname.startsWith("/doctors")
+      ? "doctors"
     : pathname.startsWith("/news")
       ? "news"
       : "home";
@@ -116,6 +142,14 @@ export function AdminShell({ children }: AdminShellProps) {
     }
     if (key === "banners") {
       router.push("/banners");
+      return;
+    }
+    if (key === "departments") {
+      router.push("/departments");
+      return;
+    }
+    if (key === "doctors") {
+      router.push("/doctors");
       return;
     }
     if (key === "news") {
@@ -172,6 +206,7 @@ export function AdminShell({ children }: AdminShellProps) {
             items={menuItems}
             mode="inline"
             onClick={handleMenuClick}
+            defaultOpenKeys={["personnel"]}
             selectedKeys={[activeKey]}
             theme="dark"
           />
@@ -198,6 +233,10 @@ export function AdminShell({ children }: AdminShellProps) {
                             ? text.products
                             : activeKey === "banners"
                               ? text.banners
+                            : activeKey === "departments"
+                              ? text.departments
+                            : activeKey === "doctors"
+                              ? text.doctors
                             : activeKey === "news"
                               ? text.news
                               : text.home,

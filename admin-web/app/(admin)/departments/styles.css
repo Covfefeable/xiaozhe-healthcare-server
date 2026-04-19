@@ -1,0 +1,30 @@
+.departments-page {
+  display: grid;
+  gap: 16px;
+}
+
+.departments-page__heading {
+  min-height: 44px;
+}
+
+.departments-page__heading .ant-typography {
+  margin: 0 !important;
+}
+
+.departments-page__filter,
+.departments-page__table {
+  border: 1px solid #e3ebea;
+  box-shadow: none;
+}
+
+.departments-page__filter .ant-form {
+  row-gap: 12px;
+}
+
+.departments-page__table .ant-card-body {
+  padding: 0;
+}
+
+.departments-page__table .ant-table-wrapper {
+  padding: 4px;
+}
