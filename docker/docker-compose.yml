@@ -1,0 +1,131 @@
+services:
+  miniapp-server:
+    build:
+      context: ../miniapp-server
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-miniapp-server
+    command: >
+      gunicorn
+      --bind 0.0.0.0:${MINIAPP_API_PORT:-5001}
+      --workers ${SERVER_WORKER_AMOUNT:-1}
+      --worker-class ${SERVER_WORKER_CLASS:-gevent}
+      --worker-connections ${SERVER_WORKER_CONNECTIONS:-10}
+      --timeout ${GUNICORN_TIMEOUT:-360}
+      "app:create_app('production')"
+    ports:
+      - "${MINIAPP_API_PORT:-5001}:${MINIAPP_API_PORT:-5001}"
+    environment:
+      RUN_MIGRATIONS: "true"
+      FLASK_APP: app
+      FLASK_ENV: production
+      APP_ENV: production
+      SECRET_KEY: ${MINIAPP_SECRET_KEY:-replace-miniapp-secret}
+      API_AUTH_TOKEN: ${MINIAPP_API_AUTH_TOKEN:-}
+      DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${DB_DATABASE:-xiaozhe_medical}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - xiaozhe-network
+
+  admin-server:
+    build:
+      context: ../admin-server
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-admin-server
+    command: >
+      gunicorn
+      --bind 0.0.0.0:${ADMIN_API_PORT:-5002}
+      --workers ${SERVER_WORKER_AMOUNT:-1}
+      --worker-class ${SERVER_WORKER_CLASS:-gevent}
+      --worker-connections ${SERVER_WORKER_CONNECTIONS:-10}
+      --timeout ${GUNICORN_TIMEOUT:-360}
+      "app:create_app('production')"
+    ports:
+      - "${ADMIN_API_PORT:-5002}:${ADMIN_API_PORT:-5002}"
+    environment:
+      RUN_MIGRATIONS: "true"
+      FLASK_APP: app
+      FLASK_ENV: production
+      APP_ENV: production
+      SECRET_KEY: ${ADMIN_SECRET_KEY:-replace-admin-secret}
+      API_AUTH_TOKEN: ${ADMIN_API_AUTH_TOKEN:-}
+      DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${DB_DATABASE:-xiaozhe_medical}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - xiaozhe-network
+
+  admin-web:
+    build:
+      context: ../admin-web
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-admin-web
+    ports:
+      - "${ADMIN_WEB_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:5002/api}
+    depends_on:
+      admin-server:
+        condition: service_started
+    networks:
+      - xiaozhe-network
+
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-postgres
+    command: >
+      postgres
+      -c max_connections=${POSTGRES_MAX_CONNECTIONS:-100}
+      -c shared_buffers=${POSTGRES_SHARED_BUFFERS:-128MB}
+      -c work_mem=${POSTGRES_WORK_MEM:-4MB}
+      -c maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-64MB}
+      -c effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-4096MB}
+      -c statement_timeout=${POSTGRES_STATEMENT_TIMEOUT:-0}
+      -c idle_in_transaction_session_timeout=${POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT:-0}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-xiaozhe123456}
+      POSTGRES_DB: ${DB_DATABASE:-xiaozhe_medical}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-xiaozhe_medical}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - xiaozhe-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-xiaozhe-medical}-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./volumes/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - xiaozhe-network
+
+networks:
+  xiaozhe-network:
+    driver: bridge

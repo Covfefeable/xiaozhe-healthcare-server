@@ -5,7 +5,6 @@ from flask import Flask
 
 from .config import config_by_name
 from .extensions import init_extensions
-from .routes import register_blueprints
 
 
 def create_app(config_name: str | None = None) -> Flask:
@@ -18,6 +17,9 @@ def create_app(config_name: str | None = None) -> Flask:
     from . import models  # noqa: F401
 
     init_extensions(app)
-    register_blueprints(app)
+
+    from .routes import api_bp
+
+    app.register_blueprint(api_bp)
 
     return app

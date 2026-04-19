@@ -1,13 +1,30 @@
 # docker
 
-该目录预留给后续容器编排文件。
+该目录用于本地或服务器容器编排。
 
-建议后续新增：
+## 文件说明
 
-- `compose.yml`
-- `postgres/`
-- `redis/`
-- 各服务 `Dockerfile`
+- `.env.example`：Compose 环境变量模板
+- `docker-compose.yml`：统一启动小程序服务端、Admin 服务端、Admin 前端、PostgreSQL、Redis
 
-当前阶段仅完成目录预留，不包含实际编排脚本。
+各项目的 `Dockerfile` 放在各自项目目录：
 
+- `../miniapp-server/Dockerfile`
+- `../admin-server/Dockerfile`
+- `../admin-web/Dockerfile`
+
+## 使用方式
+
+```bash
+cd docker
+cp .env.example .env
+docker compose --env-file .env -f docker-compose.yml up --build
+```
+
+## 端口
+
+- 小程序服务端：`5001`
+- Admin 服务端：`5002`
+- Admin 前端：`3000`
+- PostgreSQL：`5432`
+- Redis：`6379`
