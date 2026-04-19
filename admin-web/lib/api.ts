@@ -194,3 +194,56 @@ export function updateNews(id: number, data: NewsPayload) {
 export function deleteNews(id: number) {
   return request<null>(`/news/${id}`, { method: "DELETE" });
 }
+
+export type BannerItem = {
+  id: number;
+  image_url: string;
+  title: string;
+  description: string;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type BannerListParams = {
+  keyword?: string;
+  page?: number;
+  page_size?: number;
+};
+
+export type BannerPayload = {
+  image_url?: string;
+  title: string;
+  description?: string;
+};
+
+export function getBannerList(params: BannerListParams = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, String(value));
+    }
+  });
+  const query = searchParams.toString();
+  return request<{
+    items: BannerItem[];
+    pagination: { page: number; page_size: number; total: number };
+  }>(`/banners${query ? `?${query}` : ""}`);
+}
+
+export function createBanner(data: BannerPayload) {
+  return request<BannerItem>("/banners", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateBanner(id: number, data: BannerPayload) {
+  return request<BannerItem>(`/banners/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteBanner(id: number) {
+  return request<null>(`/banners/${id}`, { method: "DELETE" });
+}

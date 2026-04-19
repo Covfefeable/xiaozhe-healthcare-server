@@ -1,0 +1,56 @@
+.banners-page {
+  display: grid;
+  gap: 16px;
+}
+
+.banners-page__heading {
+  min-height: 44px;
+}
+
+.banners-page__heading .ant-typography {
+  margin: 0 !important;
+}
+
+.banners-page__filter,
+.banners-page__table {
+  border: 1px solid #e3ebea;
+  box-shadow: none;
+}
+
+.banners-page__filter .ant-form {
+  row-gap: 12px;
+}
+
+.banners-page__table .ant-card-body {
+  padding: 0;
+}
+
+.banners-page__table .ant-table-wrapper {
+  padding: 4px;
+}
+
+.banners-page__form {
+  padding-top: 8px;
+}
+
+.banners-page__preview {
+  width: 160px;
+  height: 96px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+@media (max-width: 768px) {
+  .banners-page__heading {
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
+
+  .banners-page__filter .ant-form {
+    display: grid;
+  }
+
+  .banners-page__filter .ant-form-item {
+    margin-inline-end: 0;
+  }
+}
