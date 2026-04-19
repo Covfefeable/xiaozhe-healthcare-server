@@ -15,6 +15,10 @@ class BaseConfig:
     )
     DB_TABLE_PREFIX = os.getenv("DB_TABLE_PREFIX", "miniapp_")
     JSON_AS_ASCII = False
+    MINIAPP_TOKEN_EXPIRES = int(os.getenv("MINIAPP_TOKEN_EXPIRES", "604800"))
+    WECHAT_APP_ID = os.getenv("WECHAT_APP_ID", "")
+    WECHAT_APP_SECRET = os.getenv("WECHAT_APP_SECRET", "")
+    WECHAT_API_TIMEOUT = int(os.getenv("WECHAT_API_TIMEOUT", "8"))
 
 
 class DevelopmentConfig(BaseConfig):
