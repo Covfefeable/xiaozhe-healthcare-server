@@ -32,7 +32,10 @@ const { Header, Sider, Content } = Layout;
 const text = {
   brandMark: "\u54f2",
   brandName: "\u5c0f\u54f2\u533b\u7597",
+  console: "\u540e\u53f0\u7ba1\u7406",
   home: "\u9996\u9875",
+  emptyTitle: "\u6682\u65e0\u5185\u5bb9",
+  emptyDescription: "\u8bf7\u4ece\u4e1a\u52a1\u9700\u6c42\u5f00\u59cb\u9010\u6b65\u642d\u5efa\u9875\u9762\u3002",
   collapse: "\u6536\u8d77\u83dc\u5355",
   expand: "\u5c55\u5f00\u83dc\u5355",
   logout: "\u9000\u51fa\u767b\u5f55",
@@ -74,9 +77,9 @@ export function AdminShell() {
         },
         components: {
           Layout: {
-            bodyBg: "#eef4f8",
-            headerBg: "rgba(255, 255, 255, 0.84)",
-            siderBg: "#10201f",
+            bodyBg: "#f4f7f7",
+            headerBg: "#ffffff",
+            siderBg: "#102421",
           },
         },
       }}
@@ -98,7 +101,7 @@ export function AdminShell() {
                   {text.brandName}
                 </Typography.Text>
                 <Typography.Text className="admin-shell__brand-subtitle">
-                  Admin Console
+                  {text.console}
                 </Typography.Text>
               </div>
             )}
@@ -123,9 +126,6 @@ export function AdminShell() {
                       { title: text.home },
                     ]}
                   />
-                  <Typography.Title level={4} className="admin-shell__title">
-                    {text.home}
-                  </Typography.Title>
                 </div>
               </Space>
 
@@ -151,11 +151,17 @@ export function AdminShell() {
           </Header>
 
           <Content className="admin-shell__content">
-            <Card className="admin-shell__blank" />
+            <Card className="admin-shell__blank">
+              <div className="admin-shell__empty">
+                <Typography.Title level={4}>{text.emptyTitle}</Typography.Title>
+                <Typography.Text type="secondary">
+                  {text.emptyDescription}
+                </Typography.Text>
+              </div>
+            </Card>
           </Content>
         </Layout>
       </Layout>
     </ConfigProvider>
   );
 }
-

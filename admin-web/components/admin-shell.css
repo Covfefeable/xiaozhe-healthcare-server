@@ -5,30 +5,28 @@
 .admin-shell__sider {
   min-height: 100vh;
   overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 18px 0 48px rgba(16, 32, 31, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .admin-shell__brand {
-  height: 88px;
+  height: 72px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 22px;
+  padding: 0 20px;
 }
 
 .admin-shell__brand-mark {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #d8f3ef 0%, #99f6e4 100%);
-  color: #0f3f3a;
-  font-size: 22px;
+  border-radius: 10px;
+  background: #d8f3ef;
+  color: #0b3d38;
+  font-size: 19px;
   font-weight: 800;
-  box-shadow: 0 14px 28px rgba(20, 184, 166, 0.22);
 }
 
 .admin-shell__brand-title,
@@ -38,16 +36,14 @@
 
 .admin-shell__brand-title {
   color: #ffffff !important;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.25;
 }
 
 .admin-shell__brand-subtitle {
-  color: rgba(255, 255, 255, 0.48) !important;
+  color: rgba(255, 255, 255, 0.52) !important;
   font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .admin-shell__main {
@@ -55,39 +51,78 @@
 }
 
 .admin-shell__header {
-  height: 88px;
-  padding: 0 28px;
+  height: 60px;
+  padding: 0 32px;
   position: sticky;
   top: 0;
   z-index: 10;
-  border-bottom: 1px solid rgba(218, 229, 234, 0.88);
-  backdrop-filter: blur(18px);
-}
-
-.admin-shell__title {
-  margin: 2px 0 0 !important;
-  color: #172033 !important;
+  border-bottom: 1px solid #e8eeee;
 }
 
 .admin-shell__user {
   cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 999px;
+  height: 34px;
+  padding: 2px 6px 2px 4px;
+  border-radius: 6px;
+  color: #34423f;
+  transition: background-color 0.16s ease;
 }
 
 .admin-shell__user:hover {
-  background: rgba(15, 118, 110, 0.08);
+  background: #f5f7f7;
+}
+
+.admin-shell__user .ant-avatar {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  background: #d3d8d6;
+  color: #ffffff;
+}
+
+.ant-dropdown .ant-dropdown-menu {
+  padding: 4px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(23, 32, 51, 0.1);
+}
+
+.ant-dropdown .ant-dropdown-menu-item {
+  border-radius: 6px !important;
+  min-height: 30px !important;
+  padding: 4px 10px !important;
+}
+
+.ant-dropdown .ant-dropdown-menu-item:hover {
+  background: #f3f6f5 !important;
 }
 
 .admin-shell__content {
-  min-height: calc(100vh - 88px);
+  min-height: calc(100vh - 60px);
   padding: 28px;
 }
 
 .admin-shell__blank {
-  min-height: calc(100vh - 144px);
-  border: 1px solid rgba(218, 229, 234, 0.92);
-  box-shadow: 0 18px 48px rgba(23, 32, 51, 0.06);
+  min-height: calc(100vh - 116px);
+  border: 1px solid #e3ebea;
+  box-shadow: none;
+}
+
+.admin-shell__empty {
+  min-height: calc(100vh - 166px);
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  color: #5d6b67;
+  background-image:
+    linear-gradient(#edf3f2 1px, transparent 1px),
+    linear-gradient(90deg, #edf3f2 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: center;
+}
+
+.admin-shell__empty .ant-typography {
+  margin: 0 !important;
 }
 
 @media (max-width: 768px) {
