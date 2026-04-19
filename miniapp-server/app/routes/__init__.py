@@ -4,4 +4,4 @@ from flask import Blueprint
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
 
-from . import health  # noqa: E402,F401
+from . import health, products  # noqa: E402,F401

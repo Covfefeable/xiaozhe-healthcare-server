@@ -14,6 +14,7 @@ import {
   Table,
   Tag,
   Typography,
+  Upload,
   message,
   type TablePaginationConfig,
   type TableProps,
@@ -49,8 +50,10 @@ type FilterValues = {
 
 type ProductFormValues = {
   name: string;
+  summary?: string;
   price_yuan: number;
   validity_days: number;
+  image_url?: string;
   detail_markdown?: string;
   sort_order?: number;
 };
@@ -85,8 +88,10 @@ function centsToYuan(value: number) {
 function toPayload(values: ProductFormValues): ProductPayload {
   return {
     name: values.name.trim(),
+    summary: values.summary?.trim() ?? "",
     price_cents: yuanToCents(values.price_yuan),
     validity_days: values.validity_days,
+    image_url: values.image_url ?? "",
     detail_markdown: values.detail_markdown ?? "",
     sort_order: values.sort_order ?? 0,
   };
@@ -111,6 +116,7 @@ export function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [markdownValue, setMarkdownValue] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
@@ -151,11 +157,14 @@ export function ProductsPage() {
     setEditingProduct(null);
     productForm.setFieldsValue({
       name: "",
+      summary: "",
       price_yuan: 0,
       validity_days: 30,
+      image_url: "",
       sort_order: 0,
     });
     setMarkdownValue("");
+    setImageUrl("");
     setModalOpen(true);
   };
 
@@ -163,11 +172,14 @@ export function ProductsPage() {
     setEditingProduct(product);
     productForm.setFieldsValue({
       name: product.name,
+      summary: product.summary ?? "",
       price_yuan: centsToYuan(product.price_cents),
       validity_days: product.validity_days,
+      image_url: product.image_url ?? "",
       sort_order: product.sort_order,
     });
     setMarkdownValue(product.detail_markdown ?? "");
+    setImageUrl(product.image_url ?? "");
     setModalOpen(true);
   };
 
@@ -223,9 +235,36 @@ export function ProductsPage() {
 
   const columns: TableProps<Product>["columns"] = [
     {
+      title: "产品图片",
+      dataIndex: "image_url",
+      key: "image_url",
+      width: 110,
+      render: (value: string) =>
+        value ? (
+          <img
+            alt="产品图片"
+            src={value}
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 10,
+              objectFit: "cover",
+            }}
+          />
+        ) : (
+          "-"
+        ),
+    },
+    {
       title: "产品名称",
       dataIndex: "name",
       key: "name",
+      ellipsis: true,
+    },
+    {
+      title: "产品简介",
+      dataIndex: "summary",
+      key: "summary",
       ellipsis: true,
     },
     {
@@ -304,8 +343,18 @@ export function ProductsPage() {
   };
 
   const handleUploadImage = async (file: File) => {
-    console.log(file)
     return fileToBase64(file);
+  };
+
+  const handleProductImageUpload = async (file: File) => {
+    const base64 = await fileToBase64(file);
+    productForm.setFieldValue("image_url", base64);
+    setImageUrl(base64);
+  };
+
+  const handleRemoveProductImage = () => {
+    productForm.setFieldValue("image_url", "");
+    setImageUrl("");
   };
 
   return (
@@ -374,7 +423,7 @@ export function ProductsPage() {
               showTotal: (total) => `共 ${total} 条`,
             }}
             rowKey="id"
-            scroll={{ x: 1120 }}
+            scroll={{ x: 1230 }}
           />
         </Card>
       </div>
@@ -403,6 +452,13 @@ export function ProductsPage() {
             rules={[{ required: true, message: "请输入产品名称" }]}
           >
             <Input maxLength={100} placeholder="例如：季度会员" showCount />
+          </Form.Item>
+          <Form.Item
+            label="产品简介"
+            name="summary"
+            rules={[{ max: 20, message: "产品简介不能超过 20 个字" }]}
+          >
+            <Input maxLength={20} placeholder="20 字以内，用于小程序产品卡片" showCount />
           </Form.Item>
           <Flex gap={16}>
             <Form.Item
@@ -437,6 +493,41 @@ export function ProductsPage() {
               <InputNumber precision={0} style={{ width: "100%" }} />
             </Form.Item>
           </Flex>
+          <Form.Item label="产品图片">
+            <Space align="start" size={16}>
+              <Upload
+                accept="image/*"
+                beforeUpload={(file) => {
+                  void handleProductImageUpload(file);
+                  return Upload.LIST_IGNORE;
+                }}
+                maxCount={1}
+                showUploadList={false}
+              >
+                <Button>上传图片</Button>
+              </Upload>
+              {imageUrl ? (
+                <Space align="start">
+                  <img
+                    alt="产品图片预览"
+                    src={imageUrl}
+                    style={{
+                      width: 96,
+                      height: 96,
+                      borderRadius: 12,
+                      objectFit: "cover",
+                    }}
+                  />
+                  <Button danger type="link" onClick={handleRemoveProductImage}>
+                    移除
+                  </Button>
+                </Space>
+              ) : null}
+            </Space>
+          </Form.Item>
+          <Form.Item hidden name="image_url">
+            <Input />
+          </Form.Item>
           <Form.Item label="产品详情">
             <MdEditor
               config={{

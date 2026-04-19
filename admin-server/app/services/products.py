@@ -20,9 +20,11 @@ class ProductService:
         return {
             "id": product.id,
             "name": product.name,
+            "summary": product.summary or "",
             "price_cents": product.price_cents,
             "price": f"{Decimal(product.price_cents) / Decimal(100):.2f}",
             "validity_days": product.validity_days,
+            "image_url": product.image_url or "",
             "detail_markdown": product.detail_markdown or "",
             "status": product.status,
             "sort_order": product.sort_order,
@@ -125,13 +127,18 @@ class ProductService:
             raise ProductError("产品名称不能为空")
         if len(name) > 100:
             raise ProductError("产品名称不能超过 100 个字符")
+        summary = (data.get("summary") or "").strip()
+        if len(summary) > 20:
+            raise ProductError("产品简介不能超过 20 个字符")
 
         return {
             "name": name,
+            "summary": summary,
             "price_cents": ProductService._parse_price_cents(data.get("price_cents")),
             "validity_days": ProductService._parse_validity_days(
                 data.get("validity_days")
             ),
+            "image_url": data.get("image_url") or "",
             "detail_markdown": data.get("detail_markdown") or "",
             "sort_order": ProductService._int_or_default(data.get("sort_order"), 0),
         }

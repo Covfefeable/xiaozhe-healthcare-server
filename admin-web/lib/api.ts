@@ -70,9 +70,11 @@ export type ProductStatus = "draft" | "active" | "inactive";
 export type Product = {
   id: number;
   name: string;
+  summary: string;
   price: string;
   price_cents: number;
   validity_days: 30 | 90 | 180 | 360;
+  image_url: string;
   detail_markdown: string;
   status: ProductStatus;
   sort_order: number;
@@ -90,8 +92,10 @@ export type ProductListParams = {
 
 export type ProductPayload = {
   name: string;
+  summary?: string;
   price_cents: number;
   validity_days: number;
+  image_url?: string;
   detail_markdown?: string;
   sort_order?: number;
 };

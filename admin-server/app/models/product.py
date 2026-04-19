@@ -15,8 +15,10 @@ class Product(BaseModel):
     __tablename__ = "admin_products"
 
     name = db.Column(db.String(100), nullable=False, index=True)
+    summary = db.Column(db.String(20), nullable=False, default="")
     price_cents = db.Column(db.Integer, nullable=False)
     validity_days = db.Column(db.Integer, nullable=False)
+    image_url = db.Column(db.Text, nullable=True)
     detail_markdown = db.Column(db.Text, nullable=True)
     status = db.Column(
         db.String(16),
