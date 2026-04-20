@@ -34,3 +34,16 @@ class MiniappUserMembership(BaseModel):
     deleted_at = db.Column(db.DateTime, nullable=True, index=True)
 
     user = db.relationship("MiniappUser", lazy="joined")
+
+
+class MiniappHealthRecord(BaseModel):
+    __tablename__ = "miniapp_health_records"
+
+    user_id = db.Column(db.BigInteger, db.ForeignKey("miniapp_users.id"), nullable=False, index=True)
+    record_type = db.Column(db.String(30), nullable=False, index=True)
+    content = db.Column(db.Text, nullable=False, default="")
+    image_urls = db.Column(db.JSON, nullable=False, default=list)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    deleted_at = db.Column(db.DateTime, nullable=True, index=True)
+
+    user = db.relationship("MiniappUser", lazy="joined")

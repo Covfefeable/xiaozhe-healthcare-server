@@ -524,3 +524,48 @@ export function updateOrderStatus(id: number, status: "completed" | "refunded") 
     body: JSON.stringify({ status }),
   });
 }
+
+export type AdminMiniappHealthRecord = {
+  id: number;
+  content: string;
+  image_urls: string[];
+};
+
+export type AdminMiniappUser = {
+  id: number;
+  nickname: string;
+  avatar_url: string;
+  phone: string;
+  real_name: string;
+  display_name: string;
+  gender: "male" | "female" | "unknown";
+  gender_label: string;
+  birthday: string;
+  age: number | null;
+  status: string;
+  membership_status: "active" | "none";
+  membership_expires_at: string;
+  last_login_at: string | null;
+  created_at: string | null;
+  archive?: {
+    medical_histories: AdminMiniappHealthRecord[];
+    medication_records: AdminMiniappHealthRecord[];
+  };
+};
+
+export type AdminMiniappUserListParams = {
+  keyword?: string;
+  page?: number;
+  page_size?: number;
+};
+
+export function getMiniappUserList(params: AdminMiniappUserListParams = {}) {
+  return request<{
+    items: AdminMiniappUser[];
+    pagination: { page: number; page_size: number; total: number };
+  }>(`/users${buildQuery(params)}`);
+}
+
+export function getMiniappUser(id: number) {
+  return request<AdminMiniappUser>(`/users/${id}`);
+}

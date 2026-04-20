@@ -6,8 +6,17 @@ class MiniappUser(BaseModel):
     __tablename__ = "miniapp_users"
 
     openid = db.Column(db.String(64), nullable=False)
+    unionid = db.Column(db.String(64), nullable=True)
+    nickname = db.Column(db.String(50), nullable=False, default="")
+    avatar_url = db.Column(db.Text, nullable=True)
     phone = db.Column(db.String(20), nullable=True)
+    gender = db.Column(db.String(10), nullable=False, default="unknown")
+    birthday = db.Column(db.Date, nullable=True)
     real_name = db.Column(db.String(50), nullable=False, default="")
+    status = db.Column(db.String(20), nullable=False, default="active")
+    membership_status = db.Column(db.String(20), nullable=False, default="none")
+    membership_expires_at = db.Column(db.DateTime, nullable=True)
+    last_login_at = db.Column(db.DateTime, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
 
@@ -45,3 +54,16 @@ class OrderItem(BaseModel):
     quantity = db.Column(db.Integer, nullable=False)
     subtotal_cents = db.Column(db.Integer, nullable=False)
     image_url_snapshot = db.Column(db.Text, nullable=True)
+
+
+class MiniappHealthRecord(BaseModel):
+    __tablename__ = "miniapp_health_records"
+
+    user_id = db.Column(db.BigInteger, db.ForeignKey("miniapp_users.id"), nullable=False, index=True)
+    record_type = db.Column(db.String(30), nullable=False, index=True)
+    content = db.Column(db.Text, nullable=False, default="")
+    image_urls = db.Column(db.JSON, nullable=False, default=list)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    deleted_at = db.Column(db.DateTime, nullable=True, index=True)
+
+    user = db.relationship("MiniappUser", lazy="joined")

@@ -13,7 +13,7 @@ from .news import News
 from .order import Order, OrderItem
 from .product import Product
 from .staff import Assistant, CustomerService
-from .user import MiniappUser, MiniappUserMembership
+from .user import MiniappHealthRecord, MiniappUser, MiniappUserMembership
 
 __all__ = [
     "Assistant",
@@ -28,6 +28,7 @@ __all__ = [
     "Department",
     "Doctor",
     "MiniappUser",
+    "MiniappHealthRecord",
     "MiniappUserMembership",
     "News",
     "Order",

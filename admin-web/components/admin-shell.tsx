@@ -12,6 +12,7 @@ import {
   ProfileOutlined,
   TeamOutlined,
   UserSwitchOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import {
   Avatar,
@@ -45,6 +46,7 @@ const text = {
   home: "\u9996\u9875",
   products: "\u4ea7\u54c1\u7ba1\u7406",
   orders: "\u8ba2\u5355\u7ba1\u7406",
+  users: "\u7528\u6237\u7ba1\u7406",
   banners: "Banner \u7ba1\u7406",
   news: "\u8d44\u8baf\u7ba1\u7406",
   personnel: "\u4eba\u5458\u7ba1\u7406",
@@ -76,6 +78,11 @@ const menuItems = [
     key: "orders",
     icon: <ProfileOutlined />,
     label: text.orders,
+  },
+  {
+    key: "users",
+    icon: <UserOutlined />,
+    label: text.users,
   },
   {
     key: "banners",
@@ -130,6 +137,8 @@ export function AdminShell({ children }: AdminShellProps) {
     ? "products"
     : pathname.startsWith("/orders")
       ? "orders"
+    : pathname.startsWith("/users")
+      ? "users"
     : pathname.startsWith("/banners")
       ? "banners"
     : pathname.startsWith("/departments")
@@ -167,6 +176,10 @@ export function AdminShell({ children }: AdminShellProps) {
     }
     if (key === "orders") {
       router.push("/orders");
+      return;
+    }
+    if (key === "users") {
+      router.push("/users");
       return;
     }
     if (key === "banners") {
@@ -270,6 +283,8 @@ export function AdminShell({ children }: AdminShellProps) {
                             ? text.products
                             : activeKey === "orders"
                               ? text.orders
+                            : activeKey === "users"
+                              ? text.users
                             : activeKey === "banners"
                               ? text.banners
                             : activeKey === "departments"

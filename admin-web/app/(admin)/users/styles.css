@@ -1,0 +1,22 @@
+.users-page {
+  display: grid;
+  gap: 16px;
+}
+
+.users-page__filter,
+.users-page__table {
+  border: 1px solid #e3ebea;
+  box-shadow: none;
+}
+
+.users-page__filter .ant-form {
+  row-gap: 12px;
+}
+
+.users-page__table .ant-card-body {
+  padding: 0;
+}
+
+.users-page__table .ant-table-wrapper {
+  padding: 4px;
+}
