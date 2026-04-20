@@ -120,6 +120,20 @@ class OrderService:
         return OrderService.serialize(order)
 
     @staticmethod
+    def cancel_order(user: MiniappUser, order_id: int) -> None:
+        order = Order.query.filter(
+            Order.id == order_id,
+            Order.user_id == user.id,
+            Order.deleted_at.is_(None),
+        ).first()
+        if not order:
+            raise OrderError("订单不存在", 404)
+        if order.status != "pending_payment":
+            raise OrderError("只有待支付订单可以取消")
+        order.deleted_at = datetime.utcnow()
+        db.session.commit()
+
+    @staticmethod
     def serialize(order: Order, brief: bool = False) -> dict:
         items = [OrderService.serialize_item(item) for item in order.items]
         first_item = items[0] if items else {}

@@ -16,3 +16,8 @@ def wechat_login():
 @api_bp.get("/me")
 def me():
     return auth.me()
+
+
+@api_bp.patch("/me")
+def update_me():
+    return auth.update_me()

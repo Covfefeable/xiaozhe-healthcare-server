@@ -52,3 +52,12 @@ def pay_order(order_id: int):
     except (AuthError, OrderError) as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data=order, message="支付成功")
+
+
+def cancel_order(order_id: int):
+    try:
+        user = _current_user()
+        OrderService.cancel_order(user, order_id)
+    except (AuthError, OrderError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=None, message="取消成功")

@@ -94,6 +94,20 @@ class AuthService:
         return user
 
     @staticmethod
+    def update_profile(user: MiniappUser, data: dict) -> dict:
+        avatar_url = data.get("avatar_url")
+        nickname = data.get("nickname")
+        if avatar_url is not None:
+            avatar_url = str(avatar_url).strip()
+            if len(avatar_url) > 2_000_000:
+                raise AuthError("头像文件过大")
+            user.avatar_url = avatar_url
+        if nickname is not None:
+            user.nickname = str(nickname).strip()[:50]
+        db.session.commit()
+        return AuthService.serialize_user(user)
+
+    @staticmethod
     def _login_result(user: MiniappUser) -> dict:
         user.last_login_at = datetime.utcnow()
         db.session.commit()

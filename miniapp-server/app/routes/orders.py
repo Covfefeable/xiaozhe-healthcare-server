@@ -26,3 +26,8 @@ def get_order(order_id: int):
 @api_bp.post("/orders/<int:order_id>/pay")
 def pay_order(order_id: int):
     return orders.pay_order(order_id)
+
+
+@api_bp.post("/orders/<int:order_id>/cancel")
+def cancel_order(order_id: int):
+    return orders.cancel_order(order_id)
