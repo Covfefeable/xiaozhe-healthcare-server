@@ -1,5 +1,6 @@
 from app.extensions import db
 from app.models import Banner
+from app.utils.time import beijing_iso
 
 
 class BannerError(Exception):
@@ -17,8 +18,8 @@ class BannerService:
             "image_url": banner.image_url or "",
             "title": banner.title,
             "description": banner.description or "",
-            "created_at": banner.created_at.isoformat() if banner.created_at else None,
-            "updated_at": banner.updated_at.isoformat() if banner.updated_at else None,
+            "created_at": beijing_iso(banner.created_at),
+            "updated_at": beijing_iso(banner.updated_at),
         }
 
     @staticmethod

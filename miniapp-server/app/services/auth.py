@@ -9,6 +9,7 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from app.extensions import db
 from app.models import MiniappUser
+from app.utils.time import beijing_iso, beijing_strftime
 
 
 class AuthError(Exception):
@@ -34,10 +35,8 @@ class AuthService:
             "status": user.status,
             "membership_status": "active" if is_member else "none",
             "membership_label": "会员用户" if is_member else "普通用户",
-            "membership_expires_at": user.membership_expires_at.isoformat()
-            if user.membership_expires_at
-            else None,
-            "membership_expire_date": user.membership_expires_at.strftime("%Y-%m-%d")
+            "membership_expires_at": beijing_iso(user.membership_expires_at),
+            "membership_expire_date": beijing_strftime(user.membership_expires_at, "%Y-%m-%d")
             if user.membership_expires_at
             else "",
         }

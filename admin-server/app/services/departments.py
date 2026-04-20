@@ -1,5 +1,6 @@
 from app.extensions import db
 from app.models import Department, Doctor
+from app.utils.time import beijing_iso
 
 
 class DepartmentError(Exception):
@@ -17,8 +18,8 @@ class DepartmentService:
             "name": department.name,
             "description": department.description or "",
             "sort_order": department.sort_order,
-            "created_at": department.created_at.isoformat() if department.created_at else None,
-            "updated_at": department.updated_at.isoformat() if department.updated_at else None,
+            "created_at": beijing_iso(department.created_at),
+            "updated_at": beijing_iso(department.updated_at),
         }
 
     @staticmethod

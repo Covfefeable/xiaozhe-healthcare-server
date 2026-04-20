@@ -12,6 +12,7 @@ from app.models import (
     Doctor,
     MiniappUser,
 )
+from app.utils.time import beijing_iso
 
 
 class ChatError(Exception):
@@ -257,9 +258,7 @@ class ChatService:
             "doctor_avatar": doctor.avatar_url if doctor else target["avatar"],
             "last_message_preview": conversation.last_message_preview or "",
             "last_message_type": conversation.last_message_type or "",
-            "last_message_at": conversation.last_message_at.isoformat()
-            if conversation.last_message_at
-            else None,
+            "last_message_at": beijing_iso(conversation.last_message_at),
             "unread_count": member.unread_count if member else 0,
         }
 
@@ -274,7 +273,7 @@ class ChatService:
             "message_type": message.message_type,
             "content": message.content or "",
             "status": message.status,
-            "sent_at": message.sent_at.isoformat() if message.sent_at else None,
+            "sent_at": beijing_iso(message.sent_at),
             "attachments": [
                 {
                     "id": str(item.id),

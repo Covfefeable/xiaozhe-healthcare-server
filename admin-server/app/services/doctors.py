@@ -1,5 +1,6 @@
 from app.extensions import db
 from app.models import Department, Doctor
+from app.utils.time import beijing_iso
 
 
 class DoctorError(Exception):
@@ -24,8 +25,8 @@ class DoctorService:
             "specialty_tags": doctor.specialty_tags or [],
             "introduction": doctor.introduction or "",
             "sort_order": doctor.sort_order,
-            "created_at": doctor.created_at.isoformat() if doctor.created_at else None,
-            "updated_at": doctor.updated_at.isoformat() if doctor.updated_at else None,
+            "created_at": beijing_iso(doctor.created_at),
+            "updated_at": beijing_iso(doctor.updated_at),
         }
         if include_phone:
             data["phone"] = doctor.phone

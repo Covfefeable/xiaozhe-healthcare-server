@@ -1,4 +1,5 @@
 from app.models import News
+from app.utils.time import beijing_iso
 
 
 class NewsError(Exception):
@@ -14,8 +15,8 @@ class NewsService:
         data = {
             "id": str(news.id),
             "title": news.title,
-            "date": news.published_at.isoformat() if news.published_at else None,
-            "published_at": news.published_at.isoformat() if news.published_at else None,
+            "date": beijing_iso(news.published_at),
+            "published_at": beijing_iso(news.published_at),
             "image": news.cover_image_url or "",
         }
         if include_content:

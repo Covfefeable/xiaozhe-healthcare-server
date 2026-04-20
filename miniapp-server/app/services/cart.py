@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from app.extensions import db
 from app.models import CartItem, MiniappUser, Product
+from app.utils.time import beijing_iso
 
 
 class CartError(Exception):
@@ -92,8 +93,8 @@ class CartService:
             "quantity": item.quantity,
             "subtotal_cents": price_cents * item.quantity,
             "subtotal": _format_price(price_cents * item.quantity),
-            "created_at": item.created_at.isoformat() if item.created_at else None,
-            "updated_at": item.updated_at.isoformat() if item.updated_at else None,
+            "created_at": beijing_iso(item.created_at),
+            "updated_at": beijing_iso(item.updated_at),
         }
 
     @staticmethod

@@ -4,6 +4,7 @@ from random import randint
 
 from app.extensions import db
 from app.models import CartItem, MiniappUser, MiniappUserMembership, Order, OrderItem, Product
+from app.utils.time import beijing_iso, beijing_strftime
 
 
 class OrderError(Exception):
@@ -27,7 +28,7 @@ def _format_price(price_cents: int) -> str:
 
 
 def _format_time(value: datetime | None) -> str:
-    return value.strftime("%Y-%m-%d %H:%M:%S") if value else ""
+    return beijing_strftime(value)
 
 
 class OrderService:
@@ -154,9 +155,9 @@ class OrderService:
             "payMethod": "微信支付" if order.payment_method == "wechat" else "未支付",
             "patientName": order.service_user_name or "本人",
             "time": _format_time(order.created_at),
-            "created_at": order.created_at.isoformat() if order.created_at else None,
-            "paid_at": order.paid_at.isoformat() if order.paid_at else None,
-            "completed_at": order.completed_at.isoformat() if order.completed_at else None,
+            "created_at": beijing_iso(order.created_at),
+            "paid_at": beijing_iso(order.paid_at),
+            "completed_at": beijing_iso(order.completed_at),
             "items": items,
             "progress": OrderService._progress(order),
         }

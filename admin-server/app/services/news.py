@@ -2,6 +2,7 @@ from datetime import datetime
 
 from app.extensions import db
 from app.models import News
+from app.utils.time import beijing_iso
 
 
 class NewsError(Exception):
@@ -18,10 +19,10 @@ class NewsService:
             "id": news.id,
             "cover_image_url": news.cover_image_url or "",
             "title": news.title,
-            "published_at": news.published_at.isoformat() if news.published_at else None,
+            "published_at": beijing_iso(news.published_at),
             "content_markdown": news.content_markdown or "",
-            "created_at": news.created_at.isoformat() if news.created_at else None,
-            "updated_at": news.updated_at.isoformat() if news.updated_at else None,
+            "created_at": beijing_iso(news.created_at),
+            "updated_at": beijing_iso(news.updated_at),
         }
 
     @staticmethod

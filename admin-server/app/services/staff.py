@@ -1,5 +1,6 @@
 from app.extensions import db
 from app.models import Assistant, CustomerService
+from app.utils.time import beijing_iso
 
 
 class StaffError(Exception):
@@ -25,8 +26,8 @@ class StaffService:
             "phone": item.phone,
             "status": item.status,
             "remark": item.remark or "",
-            "created_at": item.created_at.isoformat() if item.created_at else None,
-            "updated_at": item.updated_at.isoformat() if item.updated_at else None,
+            "created_at": beijing_iso(item.created_at),
+            "updated_at": beijing_iso(item.updated_at),
         }
 
     @classmethod

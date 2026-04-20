@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from app.extensions import db
 from app.models import MiniappUser, Order
+from app.utils.time import beijing_iso
 
 
 class OrderError(Exception):
@@ -52,10 +53,10 @@ class OrderService:
             "total_amount": _format_price(order.total_amount_cents),
             "paid_amount_cents": order.paid_amount_cents,
             "payment_method": order.payment_method,
-            "paid_at": order.paid_at.isoformat() if order.paid_at else None,
-            "completed_at": order.completed_at.isoformat() if order.completed_at else None,
-            "created_at": order.created_at.isoformat() if order.created_at else None,
-            "updated_at": order.updated_at.isoformat() if order.updated_at else None,
+            "paid_at": beijing_iso(order.paid_at),
+            "completed_at": beijing_iso(order.completed_at),
+            "created_at": beijing_iso(order.created_at),
+            "updated_at": beijing_iso(order.updated_at),
             "items": items,
         }
 

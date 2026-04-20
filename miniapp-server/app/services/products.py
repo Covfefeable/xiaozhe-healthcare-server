@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from app.models import Product
+from app.utils.time import beijing_iso
 
 
 class ProductError(Exception):
@@ -29,8 +30,8 @@ class ProductService:
             "featured": featured,
             "image": product.image_url or None,
             "content": product.detail_markdown or "",
-            "created_at": product.created_at.isoformat() if product.created_at else None,
-            "updated_at": product.updated_at.isoformat() if product.updated_at else None,
+            "created_at": beijing_iso(product.created_at),
+            "updated_at": beijing_iso(product.updated_at),
         }
 
     @staticmethod

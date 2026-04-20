@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from app.extensions import db
 from app.models import Product, ProductStatus, ProductType
+from app.utils.time import beijing_iso
 
 
 VALIDITY_DAY_OPTIONS = {30, 90, 180, 365}
@@ -29,8 +30,8 @@ class ProductService:
             "detail_markdown": product.detail_markdown or "",
             "status": product.status,
             "sort_order": product.sort_order,
-            "created_at": product.created_at.isoformat() if product.created_at else None,
-            "updated_at": product.updated_at.isoformat() if product.updated_at else None,
+            "created_at": beijing_iso(product.created_at),
+            "updated_at": beijing_iso(product.updated_at),
         }
 
     @staticmethod
