@@ -6,6 +6,7 @@ from .chat import (
     ChatMessage,
     ChatMessageAttachment,
 )
+from .cart import CartItem
 from .department import Department
 from .doctor import Doctor
 from .news import News
@@ -15,6 +16,7 @@ from .user import MiniappUser, MiniappUserMembership
 __all__ = [
     "Banner",
     "BaseModel",
+    "CartItem",
     "ChatConversation",
     "ChatConversationMember",
     "ChatMessage",
