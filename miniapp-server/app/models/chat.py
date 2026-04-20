@@ -6,8 +6,16 @@ class ChatConversation(BaseModel):
     __tablename__ = "miniapp_chat_conversations"
 
     conversation_type = db.Column(db.String(20), nullable=False, default="single", index=True)
+    target_type = db.Column(db.String(30), nullable=False, default="doctor", index=True)
     title = db.Column(db.String(100), nullable=False, default="")
     doctor_id = db.Column(db.BigInteger, db.ForeignKey("admin_doctors.id"), nullable=True, index=True)
+    customer_service_id = db.Column(
+        db.BigInteger,
+        db.ForeignKey("admin_customer_services.id"),
+        nullable=True,
+        index=True,
+    )
+    assistant_id = db.Column(db.BigInteger, db.ForeignKey("admin_assistants.id"), nullable=True, index=True)
     owner_user_id = db.Column(db.BigInteger, db.ForeignKey("miniapp_users.id"), nullable=False, index=True)
     last_message_id = db.Column(db.BigInteger, nullable=True)
     last_message_preview = db.Column(db.String(255), nullable=False, default="")
@@ -16,6 +24,8 @@ class ChatConversation(BaseModel):
     deleted_at = db.Column(db.DateTime, nullable=True, index=True)
 
     doctor = db.relationship("Doctor", lazy="joined")
+    customer_service = db.relationship("CustomerService", lazy="joined")
+    assistant = db.relationship("Assistant", lazy="joined")
 
 
 class ChatConversationMember(BaseModel):

@@ -1,11 +1,14 @@
 from datetime import datetime
 
+from sqlalchemy import func
+
 from app.extensions import db
 from app.models import (
     ChatConversation,
     ChatConversationMember,
     ChatMessage,
     ChatMessageAttachment,
+    CustomerService,
     Doctor,
     MiniappUser,
 )
@@ -33,6 +36,7 @@ class ChatService:
             raise ChatError("医生不存在", 404)
         conversation = ChatConversation.query.filter(
             ChatConversation.conversation_type == "single",
+            ChatConversation.target_type == "doctor",
             ChatConversation.owner_user_id == user.id,
             ChatConversation.doctor_id == doctor.id,
             ChatConversation.deleted_at.is_(None),
@@ -40,6 +44,7 @@ class ChatService:
         if not conversation:
             conversation = ChatConversation(
                 conversation_type="single",
+                target_type="doctor",
                 title=doctor.name,
                 owner_user_id=user.id,
                 doctor_id=doctor.id,
@@ -61,6 +66,54 @@ class ChatService:
                 ]
             )
             db.session.commit()
+        return ChatService.serialize_conversation(conversation, user)
+
+    @staticmethod
+    def get_or_create_customer_service_conversation(user: MiniappUser) -> dict:
+        conversation = ChatConversation.query.filter(
+            ChatConversation.conversation_type == "single",
+            ChatConversation.target_type == "customer_service",
+            ChatConversation.owner_user_id == user.id,
+            ChatConversation.deleted_at.is_(None),
+        ).first()
+        if conversation:
+            return ChatService.serialize_conversation(conversation, user)
+
+        customer_service = (
+            CustomerService.query.filter(
+                CustomerService.status == "active",
+                CustomerService.deleted_at.is_(None),
+            )
+            .order_by(func.random())
+            .first()
+        )
+        if not customer_service:
+            raise ChatError("暂无可用客服", 404)
+
+        conversation = ChatConversation(
+            conversation_type="single",
+            target_type="customer_service",
+            title=customer_service.name,
+            owner_user_id=user.id,
+            customer_service_id=customer_service.id,
+        )
+        db.session.add(conversation)
+        db.session.flush()
+        db.session.add_all(
+            [
+                ChatConversationMember(
+                    conversation_id=conversation.id,
+                    member_type="user",
+                    member_id=user.id,
+                ),
+                ChatConversationMember(
+                    conversation_id=conversation.id,
+                    member_type="customer_service",
+                    member_id=customer_service.id,
+                ),
+            ]
+        )
+        db.session.commit()
         return ChatService.serialize_conversation(conversation, user)
 
     @staticmethod
@@ -148,14 +201,15 @@ class ChatService:
         conversation.last_message_type = message_type
         conversation.last_message_preview = ChatService._message_preview(message_type, content)
         conversation.last_message_at = now
-        doctor_member = ChatConversationMember.query.filter(
+        target_member_type, target_member_id = ChatService._target_member(conversation)
+        target_member = ChatConversationMember.query.filter(
             ChatConversationMember.conversation_id == conversation.id,
-            ChatConversationMember.member_type == "doctor",
-            ChatConversationMember.member_id == conversation.doctor_id,
+            ChatConversationMember.member_type == target_member_type,
+            ChatConversationMember.member_id == target_member_id,
             ChatConversationMember.deleted_at.is_(None),
         ).first()
-        if doctor_member:
-            doctor_member.unread_count += 1
+        if target_member:
+            target_member.unread_count += 1
         db.session.commit()
         return ChatService.serialize_message(message)
 
@@ -175,21 +229,28 @@ class ChatService:
 
     @staticmethod
     def serialize_conversation(conversation: ChatConversation, user: MiniappUser) -> dict:
-        doctor = conversation.doctor
+        target = ChatService._target_profile(conversation)
         member = ChatConversationMember.query.filter(
             ChatConversationMember.conversation_id == conversation.id,
             ChatConversationMember.member_type == "user",
             ChatConversationMember.member_id == user.id,
             ChatConversationMember.deleted_at.is_(None),
         ).first()
+        doctor = conversation.doctor
         return {
             "id": str(conversation.id),
             "conversation_type": conversation.conversation_type,
+            "target_type": conversation.target_type,
+            "target_id": str(target["id"]) if target["id"] else "",
+            "target_name": target["name"],
+            "target_title": target["title"],
+            "target_label": target["label"],
+            "target_avatar": target["avatar"],
             "doctor_id": str(doctor.id) if doctor else "",
-            "doctor_name": doctor.name if doctor else conversation.title,
-            "doctor_title": doctor.title if doctor else "",
-            "department_name": doctor.department.name if doctor and doctor.department else "",
-            "doctor_avatar": doctor.avatar_url if doctor else "",
+            "doctor_name": doctor.name if doctor else target["name"],
+            "doctor_title": doctor.title if doctor else target["title"],
+            "department_name": doctor.department.name if doctor and doctor.department else target["label"],
+            "doctor_avatar": doctor.avatar_url if doctor else target["avatar"],
             "last_message_preview": conversation.last_message_preview or "",
             "last_message_type": conversation.last_message_type or "",
             "last_message_at": conversation.last_message_at.isoformat()
@@ -205,7 +266,7 @@ class ChatService:
             "conversation_id": str(message.conversation_id),
             "sender_type": message.sender_type,
             "sender_id": str(message.sender_id),
-            "role": "doctor" if message.sender_type == "doctor" else "user",
+            "role": "user" if message.sender_type == "user" else "doctor",
             "message_type": message.message_type,
             "content": message.content or "",
             "status": message.status,
@@ -234,6 +295,43 @@ class ChatService:
         if message_type == "video":
             return "[视频]"
         return content.strip()[:255]
+
+    @staticmethod
+    def _target_profile(conversation: ChatConversation) -> dict:
+        if conversation.target_type == "customer_service":
+            item = conversation.customer_service
+            return {
+                "id": item.id if item else conversation.customer_service_id,
+                "name": item.name if item else conversation.title,
+                "title": "客服",
+                "label": "客服",
+                "avatar": item.avatar_url if item else "",
+            }
+        if conversation.target_type == "assistant":
+            item = conversation.assistant
+            return {
+                "id": item.id if item else conversation.assistant_id,
+                "name": item.name if item else conversation.title,
+                "title": "助理",
+                "label": "助理",
+                "avatar": item.avatar_url if item else "",
+            }
+        doctor = conversation.doctor
+        return {
+            "id": doctor.id if doctor else conversation.doctor_id,
+            "name": doctor.name if doctor else conversation.title,
+            "title": doctor.title if doctor else "",
+            "label": doctor.department.name if doctor and doctor.department else "",
+            "avatar": doctor.avatar_url if doctor else "",
+        }
+
+    @staticmethod
+    def _target_member(conversation: ChatConversation) -> tuple[str, int | None]:
+        if conversation.target_type == "customer_service":
+            return "customer_service", conversation.customer_service_id
+        if conversation.target_type == "assistant":
+            return "assistant", conversation.assistant_id
+        return "doctor", conversation.doctor_id
 
     @staticmethod
     def _positive_int(value, default: int, maximum: int | None = None) -> int:

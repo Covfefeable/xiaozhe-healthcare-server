@@ -21,6 +21,15 @@ def create_conversation():
     return success_response(data=conversation)
 
 
+def create_customer_service_conversation():
+    try:
+        user = _current_user()
+        conversation = ChatService.get_or_create_customer_service_conversation(user)
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=conversation)
+
+
 def list_conversations():
     try:
         user = _current_user()
