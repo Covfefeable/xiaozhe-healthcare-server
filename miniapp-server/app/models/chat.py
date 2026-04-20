@@ -26,6 +26,7 @@ class ChatConversation(BaseModel):
     doctor = db.relationship("Doctor", lazy="joined")
     customer_service = db.relationship("CustomerService", lazy="joined")
     assistant = db.relationship("Assistant", lazy="joined")
+    owner_user = db.relationship("MiniappUser", lazy="joined")
 
 
 class ChatConversationMember(BaseModel):

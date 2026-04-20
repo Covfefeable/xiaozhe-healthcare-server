@@ -18,6 +18,11 @@ def create_customer_service_conversation():
     return chat.create_customer_service_conversation()
 
 
+@api_bp.post("/chat/assistant-user-conversations")
+def create_assistant_user_conversation():
+    return chat.create_assistant_user_conversation()
+
+
 @api_bp.get("/chat/conversations/<int:conversation_id>")
 def get_conversation(conversation_id: int):
     return chat.get_conversation(conversation_id)

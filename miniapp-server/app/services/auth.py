@@ -8,7 +8,7 @@ from flask import current_app
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from app.extensions import db
-from app.models import MiniappUser
+from app.models import Assistant, Doctor, MiniappUser
 from app.utils.time import beijing_iso, beijing_strftime
 
 
@@ -20,6 +20,33 @@ class AuthError(Exception):
 
 
 class AuthService:
+    @staticmethod
+    def get_roles(user: MiniappUser) -> dict:
+        roles = [{"key": "user", "label": "用户端"}]
+        phone = (user.phone or "").strip()
+
+        if phone:
+            doctor = Doctor.query.filter(
+                Doctor.phone == phone,
+                Doctor.deleted_at.is_(None),
+            ).first()
+            if doctor:
+                roles.append({"key": "doctor", "label": "医生端"})
+
+            assistant = Assistant.query.filter(
+                Assistant.phone == phone,
+                Assistant.status == "active",
+                Assistant.deleted_at.is_(None),
+            ).first()
+            if assistant:
+                roles.append({"key": "assistant", "label": "助理端"})
+
+        return {
+            "default_role": "user",
+            "roles": roles,
+            "can_switch": len(roles) > 1,
+        }
+
     @staticmethod
     def serialize_user(user: MiniappUser) -> dict:
         now = datetime.utcnow()

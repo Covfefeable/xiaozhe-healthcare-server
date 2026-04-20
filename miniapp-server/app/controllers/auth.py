@@ -28,6 +28,14 @@ def me():
     return success_response(data=AuthService.serialize_user(user))
 
 
+def roles():
+    try:
+        user = AuthService.get_current_user(request.headers.get("Authorization"))
+    except AuthError as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=AuthService.get_roles(user))
+
+
 def update_me():
     try:
         user = AuthService.get_current_user(request.headers.get("Authorization"))

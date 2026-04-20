@@ -30,10 +30,22 @@ def create_customer_service_conversation():
     return success_response(data=conversation)
 
 
+def create_assistant_user_conversation():
+    try:
+        user = _current_user()
+        conversation = ChatService.get_or_create_assistant_user_conversation(
+            user,
+            (request.get_json(silent=True) or {}).get("phone"),
+        )
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=conversation)
+
+
 def list_conversations():
     try:
         user = _current_user()
-        items = ChatService.list_conversations(user)
+        items = ChatService.list_conversations(user, request.args.get("role") or "user")
     except (AuthError, ChatError) as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data={"items": items})
@@ -42,16 +54,17 @@ def list_conversations():
 def get_conversation(conversation_id: int):
     try:
         user = _current_user()
-        conversation = ChatService.get_conversation(user, conversation_id)
+        role = request.args.get("role") or "user"
+        conversation = ChatService.get_conversation(user, conversation_id, role)
     except (AuthError, ChatError) as exc:
         return error_response(message=exc.message, code=exc.code)
-    return success_response(data=ChatService.serialize_conversation(conversation, user))
+    return success_response(data=ChatService.serialize_conversation(conversation, user, role))
 
 
 def list_messages(conversation_id: int):
     try:
         user = _current_user()
-        items = ChatService.list_messages(user, conversation_id, request.args)
+        items = ChatService.list_messages(user, conversation_id, request.args, request.args.get("role") or "user")
     except (AuthError, ChatError) as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data={"items": items})
@@ -60,10 +73,12 @@ def list_messages(conversation_id: int):
 def send_message(conversation_id: int):
     try:
         user = _current_user()
+        data = request.get_json(silent=True) or {}
         message = ChatService.send_message(
             user,
             conversation_id,
-            request.get_json(silent=True) or {},
+            data,
+            data.get("role") or request.args.get("role") or "user",
         )
     except (AuthError, ChatError) as exc:
         return error_response(message=exc.message, code=exc.code)
@@ -73,7 +88,7 @@ def send_message(conversation_id: int):
 def mark_read(conversation_id: int):
     try:
         user = _current_user()
-        ChatService.mark_read(user, conversation_id)
+        ChatService.mark_read(user, conversation_id, request.args.get("role") or "user")
     except (AuthError, ChatError) as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data=None)

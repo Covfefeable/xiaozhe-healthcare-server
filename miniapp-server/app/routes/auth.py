@@ -18,6 +18,11 @@ def me():
     return auth.me()
 
 
+@api_bp.get("/roles")
+def roles():
+    return auth.roles()
+
+
 @api_bp.patch("/me")
 def update_me():
     return auth.update_me()
