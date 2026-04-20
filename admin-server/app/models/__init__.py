@@ -4,7 +4,8 @@ from .banner import Banner
 from .department import Department
 from .doctor import Doctor
 from .news import News
-from .product import Product, ProductStatus
+from .order import MiniappUser, Order, OrderItem
+from .product import Product, ProductStatus, ProductType
 from .staff import Assistant, CustomerService
 
 __all__ = [
@@ -16,6 +17,10 @@ __all__ = [
     "Department",
     "Doctor",
     "News",
+    "MiniappUser",
+    "Order",
+    "OrderItem",
     "Product",
     "ProductStatus",
+    "ProductType",
 ]

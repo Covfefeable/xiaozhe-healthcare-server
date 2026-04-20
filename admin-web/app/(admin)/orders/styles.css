@@ -1,0 +1,22 @@
+.orders-page {
+  display: grid;
+  gap: 16px;
+}
+
+.orders-page__filter,
+.orders-page__table {
+  border: 1px solid #e3ebea;
+  box-shadow: none;
+}
+
+.orders-page__filter .ant-form {
+  row-gap: 12px;
+}
+
+.orders-page__table .ant-card-body {
+  padding: 0;
+}
+
+.orders-page__table .ant-table-wrapper {
+  padding: 4px;
+}

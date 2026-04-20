@@ -11,6 +11,11 @@ class ProductStatus(str, Enum):
     INACTIVE = "inactive"
 
 
+class ProductType(str, Enum):
+    MEMBERSHIP = "membership"
+    OTHER = "other"
+
+
 class Product(BaseModel):
     __tablename__ = "admin_products"
 
@@ -18,6 +23,7 @@ class Product(BaseModel):
     summary = db.Column(db.String(20), nullable=False, default="")
     price_cents = db.Column(db.Integer, nullable=False)
     validity_days = db.Column(db.Integer, nullable=False)
+    product_type = db.Column(db.String(20), nullable=False, default=ProductType.OTHER.value, index=True)
     image_url = db.Column(db.Text, nullable=True)
     detail_markdown = db.Column(db.Text, nullable=True)
     status = db.Column(

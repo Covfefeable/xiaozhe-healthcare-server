@@ -10,6 +10,7 @@ from .cart import CartItem
 from .department import Department
 from .doctor import Doctor
 from .news import News
+from .order import Order, OrderItem
 from .product import Product
 from .staff import Assistant, CustomerService
 from .user import MiniappUser, MiniappUserMembership
@@ -29,5 +30,7 @@ __all__ = [
     "MiniappUser",
     "MiniappUserMembership",
     "News",
+    "Order",
+    "OrderItem",
     "Product",
 ]

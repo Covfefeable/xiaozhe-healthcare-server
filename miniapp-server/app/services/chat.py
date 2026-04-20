@@ -27,6 +27,8 @@ MESSAGE_TYPES = {"text", "image", "video"}
 class ChatService:
     @staticmethod
     def get_or_create_single_conversation(user: MiniappUser, doctor_id) -> dict:
+        if not ChatService._has_active_membership(user):
+            raise ChatError("请充值会员后再咨询医生")
         try:
             doctor_id = int(doctor_id)
         except (TypeError, ValueError):
@@ -159,6 +161,8 @@ class ChatService:
     @staticmethod
     def send_message(user: MiniappUser, conversation_id: int, data: dict) -> dict:
         conversation = ChatService.get_conversation(user, conversation_id)
+        if conversation.target_type == "doctor" and not ChatService._has_active_membership(user):
+            raise ChatError("请充值会员后再咨询医生")
         message_type = data.get("message_type") or "text"
         if message_type not in MESSAGE_TYPES:
             raise ChatError("消息类型不支持")
@@ -332,6 +336,10 @@ class ChatService:
         if conversation.target_type == "assistant":
             return "assistant", conversation.assistant_id
         return "doctor", conversation.doctor_id
+
+    @staticmethod
+    def _has_active_membership(user: MiniappUser) -> bool:
+        return bool(user.membership_expires_at and user.membership_expires_at > datetime.utcnow())
 
     @staticmethod
     def _positive_int(value, default: int, maximum: int | None = None) -> int:

@@ -24,6 +24,7 @@ class ProductService:
             "price": _format_price(product.price_cents),
             "price_cents": product.price_cents,
             "validity_days": product.validity_days,
+            "product_type": product.product_type,
             "badge": "今日推荐" if featured else None,
             "featured": featured,
             "image": product.image_url or None,

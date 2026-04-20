@@ -66,6 +66,7 @@ export function logout() {
 }
 
 export type ProductStatus = "draft" | "active" | "inactive";
+export type ProductType = "membership" | "other";
 
 export type Product = {
   id: number;
@@ -73,7 +74,8 @@ export type Product = {
   summary: string;
   price: string;
   price_cents: number;
-  validity_days: 30 | 90 | 180 | 360;
+  validity_days: 0 | 30 | 90 | 180 | 365;
+  product_type: ProductType;
   image_url: string;
   detail_markdown: string;
   status: ProductStatus;
@@ -86,6 +88,7 @@ export type ProductListParams = {
   keyword?: string;
   validity_days?: number;
   status?: ProductStatus;
+  product_type?: ProductType;
   page?: number;
   page_size?: number;
 };
@@ -95,6 +98,7 @@ export type ProductPayload = {
   summary?: string;
   price_cents: number;
   validity_days: number;
+  product_type: ProductType;
   image_url?: string;
   detail_markdown?: string;
   sort_order?: number;
@@ -464,4 +468,59 @@ export function updateCustomerService(id: number, data: StaffPayload) {
 
 export function deleteCustomerService(id: number) {
   return deleteStaff("/customer-services", id);
+}
+
+export type OrderStatus = "pending_payment" | "in_progress" | "completed" | "refunded";
+
+export type AdminOrder = {
+  id: number;
+  order_no: string;
+  user_phone: string;
+  service_user_name: string;
+  status: OrderStatus;
+  status_label: string;
+  product_type: ProductType;
+  product_summary: string;
+  total_amount_cents: number;
+  total_amount: string;
+  payment_method: string;
+  paid_at: string | null;
+  completed_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  items: AdminOrderItem[];
+};
+
+export type AdminOrderItem = {
+  id: number;
+  product_name: string;
+  product_type: ProductType;
+  quantity: number;
+  subtotal_cents: number;
+  subtotal: string;
+};
+
+export type AdminOrderListParams = {
+  keyword?: string;
+  status?: OrderStatus;
+  page?: number;
+  page_size?: number;
+};
+
+export function getOrderList(params: AdminOrderListParams = {}) {
+  return request<{
+    items: AdminOrder[];
+    pagination: { page: number; page_size: number; total: number };
+  }>(`/orders${buildQuery(params)}`);
+}
+
+export function getAdminOrder(id: number) {
+  return request<AdminOrder>(`/orders/${id}`);
+}
+
+export function updateOrderStatus(id: number, status: "completed" | "refunded") {
+  return request<AdminOrder>(`/orders/${id}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ status }),
+  });
 }

@@ -21,18 +21,25 @@ class AuthError(Exception):
 class AuthService:
     @staticmethod
     def serialize_user(user: MiniappUser) -> dict:
+        now = datetime.utcnow()
+        is_member = bool(user.membership_expires_at and user.membership_expires_at > now)
         return {
             "id": str(user.id),
             "nickname": user.nickname or "",
             "avatar_url": user.avatar_url or "",
-            "phone": AuthService._mask_phone(user.phone),
+            "phone": user.phone or "",
+            "masked_phone": AuthService._mask_phone(user.phone),
             "gender": user.gender,
             "real_name": user.real_name or "",
             "status": user.status,
-            "membership_status": user.membership_status,
+            "membership_status": "active" if is_member else "none",
+            "membership_label": "会员用户" if is_member else "普通用户",
             "membership_expires_at": user.membership_expires_at.isoformat()
             if user.membership_expires_at
             else None,
+            "membership_expire_date": user.membership_expires_at.strftime("%Y-%m-%d")
+            if user.membership_expires_at
+            else "",
         }
 
     @staticmethod

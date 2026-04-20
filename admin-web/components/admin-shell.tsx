@@ -9,6 +9,7 @@ import {
   MenuUnfoldOutlined,
   PictureOutlined,
   ShoppingOutlined,
+  ProfileOutlined,
   TeamOutlined,
   UserSwitchOutlined,
 } from "@ant-design/icons";
@@ -43,6 +44,7 @@ const text = {
   console: "\u540e\u53f0\u7ba1\u7406",
   home: "\u9996\u9875",
   products: "\u4ea7\u54c1\u7ba1\u7406",
+  orders: "\u8ba2\u5355\u7ba1\u7406",
   banners: "Banner \u7ba1\u7406",
   news: "\u8d44\u8baf\u7ba1\u7406",
   personnel: "\u4eba\u5458\u7ba1\u7406",
@@ -69,6 +71,11 @@ const menuItems = [
     key: "products",
     icon: <ShoppingOutlined />,
     label: text.products,
+  },
+  {
+    key: "orders",
+    icon: <ProfileOutlined />,
+    label: text.orders,
   },
   {
     key: "banners",
@@ -121,6 +128,8 @@ export function AdminShell({ children }: AdminShellProps) {
   const [user, setUser] = useState<AdminUser | null>(null);
   const activeKey = pathname.startsWith("/products")
     ? "products"
+    : pathname.startsWith("/orders")
+      ? "orders"
     : pathname.startsWith("/banners")
       ? "banners"
     : pathname.startsWith("/departments")
@@ -154,6 +163,10 @@ export function AdminShell({ children }: AdminShellProps) {
   const handleMenuClick = ({ key }: { key: string }) => {
     if (key === "products") {
       router.push("/products");
+      return;
+    }
+    if (key === "orders") {
+      router.push("/orders");
       return;
     }
     if (key === "banners") {
@@ -255,6 +268,8 @@ export function AdminShell({ children }: AdminShellProps) {
                         title:
                           activeKey === "products"
                             ? text.products
+                            : activeKey === "orders"
+                              ? text.orders
                             : activeKey === "banners"
                               ? text.banners
                             : activeKey === "departments"

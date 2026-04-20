@@ -33,6 +33,7 @@ import {
   type Product,
   type ProductPayload,
   type ProductStatus,
+  type ProductType,
 } from "@/lib/api";
 
 const MdEditor = dynamic(() => import("react-markdown-editor-lite"), { ssr: false });
@@ -46,13 +47,15 @@ type FilterValues = {
   keyword?: string;
   validity_days?: number;
   status?: ProductStatus;
+  product_type?: ProductType;
 };
 
 type ProductFormValues = {
   name: string;
   summary?: string;
   price_yuan: number;
-  validity_days: number;
+  validity_days?: number;
+  product_type: ProductType;
   image_url?: string;
   detail_markdown?: string;
   sort_order?: number;
@@ -62,7 +65,7 @@ const validityOptions = [
   { label: "30 天", value: 30 },
   { label: "90 天", value: 90 },
   { label: "180 天", value: 180 },
-  { label: "360 天", value: 360 },
+  { label: "365 天", value: 365 },
 ];
 
 const statusOptions: { label: string; value: ProductStatus }[] = [
@@ -75,6 +78,16 @@ const statusMeta: Record<ProductStatus, { label: string; color: string }> = {
   draft: { label: "未上架", color: "default" },
   active: { label: "已上架", color: "success" },
   inactive: { label: "已下架", color: "warning" },
+};
+
+const productTypeOptions: { label: string; value: ProductType }[] = [
+  { label: "会员", value: "membership" },
+  { label: "其他", value: "other" },
+];
+
+const productTypeMeta: Record<ProductType, string> = {
+  membership: "会员",
+  other: "其他",
 };
 
 function yuanToCents(value: number) {
@@ -90,7 +103,8 @@ function toPayload(values: ProductFormValues): ProductPayload {
     name: values.name.trim(),
     summary: values.summary?.trim() ?? "",
     price_cents: yuanToCents(values.price_yuan),
-    validity_days: values.validity_days,
+    validity_days: values.product_type === "membership" ? values.validity_days ?? 0 : 0,
+    product_type: values.product_type,
     image_url: values.image_url ?? "",
     detail_markdown: values.detail_markdown ?? "",
     sort_order: values.sort_order ?? 0,
@@ -110,6 +124,7 @@ export function ProductsPage() {
   const [messageApi, contextHolder] = message.useMessage();
   const [filterForm] = Form.useForm<FilterValues>();
   const [productForm] = Form.useForm<ProductFormValues>();
+  const selectedProductType = Form.useWatch("product_type", productForm);
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -159,7 +174,8 @@ export function ProductsPage() {
       name: "",
       summary: "",
       price_yuan: 0,
-      validity_days: 30,
+      validity_days: undefined,
+      product_type: "other",
       image_url: "",
       sort_order: 0,
     });
@@ -174,7 +190,8 @@ export function ProductsPage() {
       name: product.name,
       summary: product.summary ?? "",
       price_yuan: centsToYuan(product.price_cents),
-      validity_days: product.validity_days,
+      validity_days: product.product_type === "membership" ? product.validity_days : undefined,
+      product_type: product.product_type,
       image_url: product.image_url ?? "",
       sort_order: product.sort_order,
     });
@@ -268,6 +285,13 @@ export function ProductsPage() {
       ellipsis: true,
     },
     {
+      title: "产品类型",
+      dataIndex: "product_type",
+      key: "product_type",
+      width: 110,
+      render: (value: ProductType) => productTypeMeta[value] ?? value,
+    },
+    {
       title: "价格",
       dataIndex: "price",
       key: "price",
@@ -279,7 +303,7 @@ export function ProductsPage() {
       dataIndex: "validity_days",
       key: "validity_days",
       width: 110,
-      render: (value: number) => `${value} 天`,
+      render: (value: number, record) => (record.product_type === "membership" ? `${value} 天` : "-"),
     },
     {
       title: "状态",
@@ -383,6 +407,14 @@ export function ProductsPage() {
                 style={{ width: 140 }}
               />
             </Form.Item>
+            <Form.Item name="product_type" label="产品类型">
+              <Select
+                allowClear
+                options={productTypeOptions}
+                placeholder="全部"
+                style={{ width: 140 }}
+              />
+            </Form.Item>
             <Form.Item name="status" label="状态">
               <Select
                 allowClear
@@ -482,13 +514,28 @@ export function ProductsPage() {
               </Space.Compact>
             </Form.Item>
             <Form.Item
-              label="有效期"
-              name="validity_days"
-              rules={[{ required: true, message: "请选择有效期" }]}
+              label="产品类型"
+              name="product_type"
+              rules={[{ required: true, message: "请选择产品类型" }]}
               className="products-page__form-item"
             >
-              <Select options={validityOptions} />
+              <Select
+                options={productTypeOptions}
+                onChange={(value: ProductType) => {
+                  productForm.setFieldValue("validity_days", value === "membership" ? 30 : undefined);
+                }}
+              />
             </Form.Item>
+            {selectedProductType === "membership" ? (
+              <Form.Item
+                label="有效期"
+                name="validity_days"
+                rules={[{ required: true, message: "请选择有效期" }]}
+                className="products-page__form-item"
+              >
+                <Select options={validityOptions} />
+              </Form.Item>
+            ) : null}
             <Form.Item label="排序" name="sort_order" className="products-page__form-item">
               <InputNumber precision={0} style={{ width: "100%" }} />
             </Form.Item>
