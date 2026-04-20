@@ -80,7 +80,6 @@ def upgrade():
         sa.Column("last_message_type", sa.String(length=20), nullable=False),
         sa.Column("last_message_at", sa.DateTime(), nullable=True),
         sa.Column("deleted_at", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(["doctor_id"], ["admin_doctors.id"]),
         sa.ForeignKeyConstraint(["owner_user_id"], ["miniapp_users.id"]),
         sa.PrimaryKeyConstraint("id"),
     )

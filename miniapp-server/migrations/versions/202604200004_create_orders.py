@@ -60,7 +60,6 @@ def upgrade():
         sa.Column("subtotal_cents", sa.Integer(), nullable=False),
         sa.Column("image_url_snapshot", sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(["order_id"], ["miniapp_orders.id"]),
-        sa.ForeignKeyConstraint(["product_id"], ["admin_products.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_miniapp_order_items_order_id"), "miniapp_order_items", ["order_id"])

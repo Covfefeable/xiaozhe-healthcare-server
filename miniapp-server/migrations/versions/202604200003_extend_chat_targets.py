@@ -28,20 +28,6 @@ def upgrade():
         "miniapp_chat_conversations",
         sa.Column("assistant_id", sa.BigInteger(), nullable=True),
     )
-    op.create_foreign_key(
-        "fk_miniapp_chat_conversations_customer_service_id",
-        "miniapp_chat_conversations",
-        "admin_customer_services",
-        ["customer_service_id"],
-        ["id"],
-    )
-    op.create_foreign_key(
-        "fk_miniapp_chat_conversations_assistant_id",
-        "miniapp_chat_conversations",
-        "admin_assistants",
-        ["assistant_id"],
-        ["id"],
-    )
     op.create_index(
         op.f("ix_miniapp_chat_conversations_target_type"),
         "miniapp_chat_conversations",
@@ -64,16 +50,6 @@ def downgrade():
     op.drop_index(op.f("ix_miniapp_chat_conversations_assistant_id"), table_name="miniapp_chat_conversations")
     op.drop_index(op.f("ix_miniapp_chat_conversations_customer_service_id"), table_name="miniapp_chat_conversations")
     op.drop_index(op.f("ix_miniapp_chat_conversations_target_type"), table_name="miniapp_chat_conversations")
-    op.drop_constraint(
-        "fk_miniapp_chat_conversations_assistant_id",
-        "miniapp_chat_conversations",
-        type_="foreignkey",
-    )
-    op.drop_constraint(
-        "fk_miniapp_chat_conversations_customer_service_id",
-        "miniapp_chat_conversations",
-        type_="foreignkey",
-    )
     op.drop_column("miniapp_chat_conversations", "assistant_id")
     op.drop_column("miniapp_chat_conversations", "customer_service_id")
     op.drop_column("miniapp_chat_conversations", "target_type")

@@ -25,7 +25,6 @@ def upgrade():
         sa.Column("product_id", sa.BigInteger(), nullable=False),
         sa.Column("quantity", sa.Integer(), nullable=False),
         sa.Column("deleted_at", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(["product_id"], ["admin_products.id"]),
         sa.ForeignKeyConstraint(["user_id"], ["miniapp_users.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
