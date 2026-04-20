@@ -1,5 +1,5 @@
 from app.extensions import db
-from app.models import Department, Doctor
+from app.models import Department, Doctor, MiniappUser
 
 
 class DoctorError(Exception):
@@ -15,9 +15,9 @@ def _normalize_image_src(image: str | None) -> str:
 
 class DoctorService:
     @staticmethod
-    def serialize(doctor: Doctor) -> dict:
+    def serialize(doctor: Doctor, include_phone: bool = False) -> dict:
         department_name = doctor.department.name if doctor.department else ""
-        return {
+        data = {
             "id": str(doctor.id),
             "department": str(doctor.department_id),
             "department_id": str(doctor.department_id),
@@ -33,6 +33,9 @@ class DoctorService:
             "specialty_tags": doctor.specialty_tags or [],
             "introduction": doctor.introduction or "",
         }
+        if include_phone:
+            data["phone"] = doctor.phone
+        return data
 
     @staticmethod
     def list_doctors(args) -> list[dict]:
@@ -66,3 +69,17 @@ class DoctorService:
         if not doctor or doctor.department.deleted_at is not None:
             raise DoctorError("医生不存在", 404)
         return DoctorService.serialize(doctor)
+
+    @staticmethod
+    def get_current_doctor(user: MiniappUser) -> dict:
+        phone = (user.phone or "").strip()
+        if not phone:
+            raise DoctorError("当前登录用户未绑定手机号", 404)
+        doctor = Doctor.query.join(Department).filter(
+            Doctor.phone == phone,
+            Doctor.deleted_at.is_(None),
+            Department.deleted_at.is_(None),
+        ).first()
+        if not doctor:
+            raise DoctorError("当前手机号未匹配到医生信息", 404)
+        return DoctorService.serialize(doctor, include_phone=True)

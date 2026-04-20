@@ -86,7 +86,7 @@ class DoctorService:
     @staticmethod
     def update_doctor(doctor_id: int, data: dict) -> Doctor:
         doctor = DoctorService.get_doctor(doctor_id)
-        payload = DoctorService._validate_payload(data)
+        payload = DoctorService._validate_payload(data, doctor_id=doctor_id)
         for key, value in payload.items():
             setattr(doctor, key, value)
         db.session.commit()
@@ -99,7 +99,7 @@ class DoctorService:
         db.session.commit()
 
     @staticmethod
-    def _validate_payload(data: dict) -> dict:
+    def _validate_payload(data: dict, doctor_id: int | None = None) -> dict:
         try:
             department_id = int(data.get("department_id"))
         except (TypeError, ValueError):
@@ -121,6 +121,14 @@ class DoctorService:
             raise DoctorError("手机号码不能为空")
         if len(phone) > 20:
             raise DoctorError("手机号码不能超过 20 个字符")
+        duplicate_query = Doctor.query.filter(
+            Doctor.phone == phone,
+            Doctor.deleted_at.is_(None),
+        )
+        if doctor_id is not None:
+            duplicate_query = duplicate_query.filter(Doctor.id != doctor_id)
+        if duplicate_query.first():
+            raise DoctorError("该手机号已存在医生信息")
         title = (data.get("title") or "").strip()
         hospital = (data.get("hospital") or "").strip()
         summary = (data.get("summary") or "").strip()
