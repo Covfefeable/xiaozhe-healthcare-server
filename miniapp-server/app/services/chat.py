@@ -332,12 +332,13 @@ class ChatService:
 
     @staticmethod
     def serialize_message(message: ChatMessage) -> dict:
+        role = message.sender_type if message.sender_type in {"user", "doctor", "assistant", "customer_service"} else "system"
         return {
             "id": str(message.id),
             "conversation_id": str(message.conversation_id),
             "sender_type": message.sender_type,
             "sender_id": str(message.sender_id),
-            "role": "user" if message.sender_type == "user" else "doctor",
+            "role": role,
             "message_type": message.message_type,
             "content": message.content or "",
             "status": message.status,
