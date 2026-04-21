@@ -38,3 +38,18 @@ def get_conversation_user_archive(conversation_id: int):
     except (AuthError, HealthArchiveError) as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data=data)
+
+
+def get_conversation_member_profile(conversation_id: int, member_type: str, member_id: int):
+    try:
+        user = _current_user()
+        data = HealthArchiveService.get_member_profile_by_conversation(
+            user,
+            conversation_id,
+            request.args.get("role") or "user",
+            member_type,
+            member_id,
+        )
+    except (AuthError, HealthArchiveError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=data)

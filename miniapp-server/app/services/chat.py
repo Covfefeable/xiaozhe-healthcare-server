@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from app.extensions import db
 from app.models import (
@@ -175,6 +175,134 @@ class ChatService:
         return ChatService.serialize_conversation(conversation, user, "assistant")
 
     @staticmethod
+    def search_users_for_assistant(user: MiniappUser, keyword: str = "") -> list[dict]:
+        ChatService._staff_member(user, "assistant")
+        normalized_keyword = (keyword or "").strip()
+        query = MiniappUser.query.filter(
+            MiniappUser.id != user.id,
+            MiniappUser.status == "active",
+            MiniappUser.phone.isnot(None),
+            MiniappUser.deleted_at.is_(None),
+        )
+        if normalized_keyword:
+            like = f"%{normalized_keyword}%"
+            query = query.filter(
+                or_(
+                    MiniappUser.phone.ilike(like),
+                    MiniappUser.real_name.ilike(like),
+                    MiniappUser.nickname.ilike(like),
+                )
+            )
+        users = query.order_by(MiniappUser.updated_at.desc()).limit(50).all()
+        return [ChatService.serialize_chat_user(item) for item in users]
+
+    @staticmethod
+    def create_assistant_patient_conversation(user: MiniappUser, payload) -> dict:
+        assistant = ChatService._staff_member(user, "assistant")
+        payload = payload or {}
+        phone_list = ChatService._normalize_string_list(payload.get("phones"))
+        doctor_ids = ChatService._normalize_id_list(payload.get("doctor_ids"))
+        assistant_ids = [
+            item_id
+            for item_id in ChatService._normalize_id_list(payload.get("assistant_ids"))
+            if item_id != assistant.id
+        ]
+        selected_count = len(phone_list) + len(doctor_ids) + len(assistant_ids)
+        if not selected_count:
+            raise ChatError("请选择要发起聊天的用户")
+        if selected_count == 1 and len(phone_list) == 1:
+            return ChatService.get_or_create_assistant_user_conversation(user, phone_list[0])
+
+        users = MiniappUser.query.filter(
+            MiniappUser.phone.in_(phone_list),
+            MiniappUser.status == "active",
+            MiniappUser.deleted_at.is_(None),
+        ).all() if phone_list else []
+        user_by_phone = {item.phone: item for item in users}
+        missing_phones = [phone for phone in phone_list if phone not in user_by_phone]
+        if missing_phones:
+            raise ChatError(f"未找到手机号：{missing_phones[0]}", 404)
+
+        doctors = Doctor.query.filter(
+            Doctor.id.in_(doctor_ids),
+            Doctor.deleted_at.is_(None),
+        ).all() if doctor_ids else []
+        if len(doctors) != len(doctor_ids):
+            raise ChatError("医生不存在", 404)
+
+        assistants = Assistant.query.filter(
+            Assistant.id.in_(assistant_ids),
+            Assistant.status == "active",
+            Assistant.deleted_at.is_(None),
+        ).all() if assistant_ids else []
+        if len(assistants) != len(assistant_ids):
+            raise ChatError("助理不存在", 404)
+
+        selected_members = (
+            [("user", item.id) for item in users]
+            + [("doctor", item.id) for item in doctors]
+            + [("assistant", item.id) for item in assistants]
+        )
+        selected_profiles = [
+            ChatService._member_profile(member_type, member_id)
+            for member_type, member_id in selected_members
+        ]
+        if len(selected_members) == 1:
+            target_type, target_id = selected_members[0]
+            target_profile = selected_profiles[0]
+            conversation = ChatConversation(
+                conversation_type="single",
+                target_type=target_type,
+                title=target_profile["name"],
+                owner_user_id=user.id,
+                doctor_id=target_id if target_type == "doctor" else None,
+                assistant_id=target_id if target_type == "assistant" else assistant.id,
+            )
+            db.session.add(conversation)
+            db.session.flush()
+            ChatService._ensure_conversation_member(conversation.id, "assistant", assistant.id)
+            ChatService._ensure_conversation_member(
+                conversation.id,
+                target_type,
+                target_id,
+                invited_by_type="assistant",
+                invited_by_id=assistant.id,
+            )
+            db.session.commit()
+            return ChatService.serialize_conversation(conversation, user, "assistant")
+
+        owner_user = users[0] if users else user
+        title_names = [profile["name"] or "成员" for profile in selected_profiles[:2]]
+        title = "、".join(title_names)
+        if len(selected_profiles) > 2:
+            title = f"{title}等{len(selected_profiles)}人"
+        title = f"{title}的健康咨询"
+
+        conversation = ChatConversation(
+            conversation_type="group",
+            target_type="assistant",
+            title=title,
+            owner_user_id=owner_user.id,
+            assistant_id=assistant.id,
+        )
+        db.session.add(conversation)
+        db.session.flush()
+        ChatService._ensure_conversation_member(conversation.id, "assistant", assistant.id)
+        joined_members = [
+            ChatService._ensure_conversation_member(
+                conversation.id,
+                member_type,
+                member_id,
+                invited_by_type="assistant",
+                invited_by_id=assistant.id,
+            )
+            for member_type, member_id in selected_members
+        ]
+        ChatService._add_join_messages(conversation, joined_members)
+        db.session.commit()
+        return ChatService.serialize_conversation(conversation, user, "assistant")
+
+    @staticmethod
     def invite_doctors(user: MiniappUser, conversation_id: int, doctor_ids) -> dict:
         conversation, assistant = ChatService._conversation_for_health_manager(user, conversation_id)
         ids = ChatService._normalize_id_list(doctor_ids)
@@ -255,24 +383,18 @@ class ChatService:
     @staticmethod
     def list_conversations(user: MiniappUser, role: str = "user") -> list[dict]:
         member_type, member_id = ChatService._viewer_member(user, role)
-        if member_type == "user":
-            query = ChatConversation.query.filter(
-                ChatConversation.owner_user_id == member_id,
+        query = (
+            ChatConversation.query.join(
+                ChatConversationMember,
+                ChatConversationMember.conversation_id == ChatConversation.id,
+            )
+            .filter(
+                ChatConversationMember.member_type == member_type,
+                ChatConversationMember.member_id == member_id,
+                ChatConversationMember.deleted_at.is_(None),
                 ChatConversation.deleted_at.is_(None),
             )
-        else:
-            query = (
-                ChatConversation.query.join(
-                    ChatConversationMember,
-                    ChatConversationMember.conversation_id == ChatConversation.id,
-                )
-                .filter(
-                    ChatConversationMember.member_type == member_type,
-                    ChatConversationMember.member_id == member_id,
-                    ChatConversationMember.deleted_at.is_(None),
-                    ChatConversation.deleted_at.is_(None),
-                )
-            )
+        )
         conversations = query.order_by(
             ChatConversation.last_message_at.desc().nullslast(),
             ChatConversation.created_at.desc(),
@@ -392,7 +514,7 @@ class ChatService:
     @staticmethod
     def serialize_conversation(conversation: ChatConversation, user: MiniappUser, role: str = "user") -> dict:
         member_type, member_id = ChatService._viewer_member(user, role)
-        target = ChatService._target_profile(conversation, role)
+        target = ChatService._target_profile(conversation, role, member_type, member_id)
         member = ChatConversationMember.query.filter(
             ChatConversationMember.conversation_id == conversation.id,
             ChatConversationMember.member_type == member_type,
@@ -487,6 +609,16 @@ class ChatService:
         }
 
     @staticmethod
+    def serialize_chat_user(user: MiniappUser) -> dict:
+        return {
+            "id": str(user.id),
+            "name": user.real_name or user.nickname or user.phone or "用户",
+            "phone": user.phone or "",
+            "avatar_url": user.avatar_url or "",
+            "membership_status": user.membership_status,
+        }
+
+    @staticmethod
     def _message_preview(message_type: str, content: str) -> str:
         if message_type == "image":
             return "[图片]"
@@ -522,12 +654,15 @@ class ChatService:
                 ChatConversationMember.deleted_at.is_(None),
             ).all()
             for member in members:
-                if member.member_type == joined_member.member_type and member.member_id == joined_member.member_id:
-                    continue
                 member.unread_count += 1
 
     @staticmethod
-    def _target_profile(conversation: ChatConversation, role: str = "user") -> dict:
+    def _target_profile(
+        conversation: ChatConversation,
+        role: str = "user",
+        viewer_type: str | None = None,
+        viewer_id: int | None = None,
+    ) -> dict:
         if conversation.conversation_type == "group":
             user = conversation.owner_user
             name = conversation.title or ((user.real_name or user.nickname or user.phone or "用户") if user else "健康咨询")
@@ -538,6 +673,30 @@ class ChatService:
                 "label": "健康咨询",
                 "avatar": user.avatar_url if user else "",
             }
+        if role in {"doctor", "assistant"} and viewer_type and viewer_id:
+            other_member = (
+                ChatConversationMember.query.filter(
+                    ChatConversationMember.conversation_id == conversation.id,
+                    ChatConversationMember.deleted_at.is_(None),
+                )
+                .filter(
+                    or_(
+                        ChatConversationMember.member_type != viewer_type,
+                        ChatConversationMember.member_id != viewer_id,
+                    )
+                )
+                .order_by(ChatConversationMember.created_at.asc())
+                .first()
+            )
+            if other_member:
+                profile = ChatService._member_profile(other_member.member_type, other_member.member_id)
+                return {
+                    "id": profile["id"],
+                    "name": profile["name"],
+                    "title": profile["role_label"],
+                    "label": profile["role_label"],
+                    "avatar": profile["avatar"],
+                }
         if role in {"doctor", "assistant"}:
             user = conversation.owner_user
             return {
@@ -740,6 +899,19 @@ class ChatService:
             if number > 0 and number not in ids:
                 ids.append(number)
         return ids
+
+    @staticmethod
+    def _normalize_string_list(values) -> list[str]:
+        if values is None:
+            return []
+        if not isinstance(values, list):
+            values = [values]
+        items: list[str] = []
+        for value in values:
+            text = str(value or "").strip()
+            if text and text not in items:
+                items.append(text)
+        return items
 
     @staticmethod
     def _existing_member_ids(conversation_id: int, member_type: str) -> set[int]:

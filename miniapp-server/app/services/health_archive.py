@@ -1,8 +1,10 @@
 from datetime import date, datetime
 
 from app.extensions import db
-from app.models import ChatConversation, ChatConversationMember, MiniappHealthRecord, MiniappUser
+from app.models import Assistant, ChatConversation, ChatConversationMember, Doctor, MiniappHealthRecord, MiniappUser
 from app.services.chat import ChatService
+from app.services.assistants import AssistantService
+from app.services.doctors import DoctorService
 from app.utils.time import beijing_iso
 
 
@@ -108,6 +110,67 @@ class HealthArchiveService:
         return HealthArchiveService.serialize_archive(user)
 
     @staticmethod
+    def get_member_profile_by_conversation(
+        viewer: MiniappUser,
+        conversation_id: int,
+        role: str,
+        member_type: str,
+        member_id: int,
+    ) -> dict:
+        viewer_type, viewer_id = ChatService._viewer_member(viewer, role)
+        if member_type not in {"user", "doctor", "assistant"}:
+            raise HealthArchiveError("成员类型不支持", 400)
+
+        conversation = ChatConversation.query.filter(
+            ChatConversation.id == conversation_id,
+            ChatConversation.deleted_at.is_(None),
+        ).first()
+        if not conversation:
+            raise HealthArchiveError("会话不存在", 404)
+
+        viewer_member = HealthArchiveService._conversation_member(conversation.id, viewer_type, viewer_id)
+        target_member = HealthArchiveService._conversation_member(conversation.id, member_type, member_id)
+        if not viewer_member or not target_member:
+            raise HealthArchiveError("无权查看该成员资料", 403)
+
+        if member_type == "user":
+            user = MiniappUser.query.filter(
+                MiniappUser.id == member_id,
+                MiniappUser.deleted_at.is_(None),
+            ).first()
+            if not user:
+                raise HealthArchiveError("用户不存在", 404)
+            return {
+                "member_type": "user",
+                "profile": HealthArchiveService.serialize_user(user),
+                "archive": HealthArchiveService.serialize_archive(user),
+            }
+
+        if member_type == "doctor":
+            doctor = Doctor.query.filter(
+                Doctor.id == member_id,
+                Doctor.deleted_at.is_(None),
+            ).first()
+            if not doctor or not doctor.department or doctor.department.deleted_at is not None:
+                raise HealthArchiveError("医生不存在", 404)
+            return {
+                "member_type": "doctor",
+                "profile": DoctorService.serialize(doctor, include_phone=True),
+            }
+
+        assistant = Assistant.query.filter(
+            Assistant.id == member_id,
+            Assistant.status == "active",
+            Assistant.deleted_at.is_(None),
+        ).first()
+        if not assistant:
+            raise HealthArchiveError("助理不存在", 404)
+        return {
+            "member_type": "assistant",
+            "profile": AssistantService.serialize(assistant),
+        }
+
+    @staticmethod
     def _replace_records(user: MiniappUser, record_type: str, items: list[dict]) -> None:
         MiniappHealthRecord.query.filter(
             MiniappHealthRecord.user_id == user.id,
@@ -129,6 +192,15 @@ class HealthArchiveService:
                     sort_order=index,
                 )
             )
+
+    @staticmethod
+    def _conversation_member(conversation_id: int, member_type: str, member_id: int) -> ChatConversationMember | None:
+        return ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation_id,
+            ChatConversationMember.member_type == member_type,
+            ChatConversationMember.member_id == member_id,
+            ChatConversationMember.deleted_at.is_(None),
+        ).first()
 
     @staticmethod
     def _parse_date(value) -> date | None:

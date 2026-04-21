@@ -51,6 +51,24 @@ def create_assistant_user_conversation():
     return success_response(data=conversation)
 
 
+def create_assistant_patient_conversation():
+    try:
+        user = _current_user()
+        conversation = ChatService.create_assistant_patient_conversation(user, request.get_json(silent=True) or {})
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=conversation)
+
+
+def list_chat_users():
+    try:
+        user = _current_user()
+        items = ChatService.search_users_for_assistant(user, request.args.get("keyword") or "")
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data={"items": items})
+
+
 def list_conversations():
     try:
         user = _current_user()

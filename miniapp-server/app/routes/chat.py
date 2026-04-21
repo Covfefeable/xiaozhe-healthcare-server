@@ -28,6 +28,16 @@ def create_assistant_user_conversation():
     return chat.create_assistant_user_conversation()
 
 
+@api_bp.post("/chat/assistant-patient-conversations")
+def create_assistant_patient_conversation():
+    return chat.create_assistant_patient_conversation()
+
+
+@api_bp.get("/chat/users")
+def list_chat_users():
+    return chat.list_chat_users()
+
+
 @api_bp.get("/chat/conversations/<int:conversation_id>")
 def get_conversation(conversation_id: int):
     return chat.get_conversation(conversation_id)
