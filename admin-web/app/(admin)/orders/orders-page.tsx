@@ -31,10 +31,15 @@ type FilterValues = {
   status?: OrderStatus;
 };
 
+type RejectRefundValues = {
+  refund_reject_reason: string;
+};
+
 const statusOptions: { label: string; value: OrderStatus }[] = [
   { label: "待支付", value: "pending_payment" },
   { label: "进行中", value: "in_progress" },
   { label: "已完成", value: "completed" },
+  { label: "退款中", value: "pending_refund" },
   { label: "已退款", value: "refunded" },
 ];
 
@@ -42,6 +47,7 @@ const statusColor: Record<OrderStatus, string> = {
   pending_payment: "warning",
   in_progress: "processing",
   completed: "success",
+  pending_refund: "error",
   refunded: "default",
 };
 
@@ -57,11 +63,15 @@ function formatDate(value: string | null) {
 export function OrdersPage() {
   const [messageApi, contextHolder] = message.useMessage();
   const [filterForm] = Form.useForm<FilterValues>();
+  const [rejectForm] = Form.useForm<RejectRefundValues>();
   const [items, setItems] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(false);
+  const [rejectLoading, setRejectLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<AdminOrder | null>(null);
+  const [rejectOrder, setRejectOrder] = useState<AdminOrder | null>(null);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
 
   const loadOrders = async (nextPage = pagination.current, nextPageSize = pagination.pageSize) => {
@@ -97,6 +107,32 @@ export function OrdersPage() {
       await loadOrders(pagination.current, pagination.pageSize);
     } catch (error) {
       messageApi.error(error instanceof Error ? error.message : "保存失败");
+    }
+  };
+
+  const handleOpenRejectRefund = (order: AdminOrder) => {
+    setRejectOrder(order);
+    rejectForm.resetFields();
+    setRejectOpen(true);
+  };
+
+  const handleRejectRefund = async () => {
+    if (!rejectOrder) {
+      return;
+    }
+    try {
+      const values = await rejectForm.validateFields();
+      setRejectLoading(true);
+      await updateOrderStatus(rejectOrder.id, "in_progress", values);
+      messageApi.success("已拒绝退款");
+      setRejectOpen(false);
+      await loadOrders(pagination.current, pagination.pageSize);
+    } catch (error) {
+      if (error instanceof Error) {
+        messageApi.error(error.message);
+      }
+    } finally {
+      setRejectLoading(false);
     }
   };
 
@@ -148,6 +184,7 @@ export function OrdersPage() {
       width: 190,
       render: (_, record) => {
         const canOperate = record.status === "in_progress";
+        const canProcessRefund = record.status === "pending_refund";
         const canComplete = canOperate && record.product_type !== "membership";
         return (
           <Space size={4}>
@@ -175,6 +212,23 @@ export function OrdersPage() {
                   退款
                 </Button>
               </Popconfirm>
+            ) : null}
+            {canProcessRefund ? (
+              <Popconfirm
+                title="确认同意该退款申请？"
+                okText="确认"
+                cancelText="取消"
+                onConfirm={() => void handleUpdateStatus(record, "refunded")}
+              >
+                <Button danger type="link">
+                  同意退款
+                </Button>
+              </Popconfirm>
+            ) : null}
+            {canProcessRefund ? (
+              <Button type="link" onClick={() => handleOpenRejectRefund(record)}>
+                拒绝退款
+              </Button>
             ) : null}
           </Space>
         );
@@ -256,9 +310,25 @@ export function OrdersPage() {
                 <Descriptions.Item label="支付方式">{currentOrder.payment_method || "-"}</Descriptions.Item>
                 <Descriptions.Item label="支付时间">{formatDate(currentOrder.paid_at)}</Descriptions.Item>
                 <Descriptions.Item label="完成时间">{formatDate(currentOrder.completed_at)}</Descriptions.Item>
+                <Descriptions.Item label="退款时间">{formatDate(currentOrder.refunded_at)}</Descriptions.Item>
                 <Descriptions.Item label="创建时间" span={2}>
                   {formatDate(currentOrder.created_at)}
                 </Descriptions.Item>
+                {currentOrder.refund?.requested_at ? (
+                  <>
+                    <Descriptions.Item label="退款申请时间">{formatDate(currentOrder.refund.requested_at)}</Descriptions.Item>
+                    <Descriptions.Item label="退款处理时间">{formatDate(currentOrder.refund.handled_at)}</Descriptions.Item>
+                    <Descriptions.Item label="退款原因" span={2}>
+                      {currentOrder.refund.reason || "-"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="退款说明" span={2}>
+                      {currentOrder.refund.description || "-"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="拒绝原因" span={2}>
+                      {currentOrder.refund.reject_reason || "-"}
+                    </Descriptions.Item>
+                  </>
+                ) : null}
               </Descriptions>
               <Table
                 columns={[
@@ -286,6 +356,25 @@ export function OrdersPage() {
               />
             </Space>
           ) : null}
+        </Modal>
+        <Modal
+          title="拒绝退款"
+          open={rejectOpen}
+          okText="确认拒绝"
+          cancelText="取消"
+          confirmLoading={rejectLoading}
+          onOk={() => void handleRejectRefund()}
+          onCancel={() => setRejectOpen(false)}
+        >
+          <Form form={rejectForm} layout="vertical">
+            <Form.Item
+              name="refund_reject_reason"
+              label="拒绝原因"
+              rules={[{ required: true, message: "请填写拒绝退款原因" }]}
+            >
+              <Input.TextArea rows={4} maxLength={255} showCount placeholder="请输入拒绝退款原因" />
+            </Form.Item>
+          </Form>
         </Modal>
       </div>
     </>

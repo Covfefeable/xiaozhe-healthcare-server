@@ -16,6 +16,12 @@ class Order(BaseModel):
     paid_at = db.Column(db.DateTime, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)
     refunded_at = db.Column(db.DateTime, nullable=True)
+    refund_reason = db.Column(db.String(100), nullable=False, default="")
+    refund_description = db.Column(db.Text, nullable=False, default="")
+    refund_image_urls = db.Column(db.JSON, nullable=False, default=list)
+    refund_requested_at = db.Column(db.DateTime, nullable=True)
+    refund_handled_at = db.Column(db.DateTime, nullable=True)
+    refund_reject_reason = db.Column(db.String(255), nullable=False, default="")
     remark = db.Column(db.String(255), nullable=False, default="")
     deleted_at = db.Column(db.DateTime, nullable=True, index=True)
 

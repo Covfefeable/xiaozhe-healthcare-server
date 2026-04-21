@@ -31,3 +31,8 @@ def pay_order(order_id: int):
 @api_bp.post("/orders/<int:order_id>/cancel")
 def cancel_order(order_id: int):
     return orders.cancel_order(order_id)
+
+
+@api_bp.post("/orders/<int:order_id>/refund")
+def request_refund(order_id: int):
+    return orders.request_refund(order_id)

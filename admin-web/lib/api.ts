@@ -474,7 +474,16 @@ export function deleteCustomerService(id: number) {
   return deleteStaff("/customer-services", id);
 }
 
-export type OrderStatus = "pending_payment" | "in_progress" | "completed" | "refunded";
+export type OrderStatus = "pending_payment" | "in_progress" | "completed" | "pending_refund" | "refunded";
+
+export type AdminOrderRefund = {
+  reason: string;
+  description: string;
+  image_urls: string[];
+  requested_at: string | null;
+  handled_at: string | null;
+  reject_reason: string;
+};
 
 export type AdminOrder = {
   id: number;
@@ -490,6 +499,8 @@ export type AdminOrder = {
   payment_method: string;
   paid_at: string | null;
   completed_at: string | null;
+  refunded_at: string | null;
+  refund: AdminOrderRefund;
   created_at: string | null;
   updated_at: string | null;
   items: AdminOrderItem[];
@@ -522,10 +533,14 @@ export function getAdminOrder(id: number) {
   return request<AdminOrder>(`/orders/${id}`);
 }
 
-export function updateOrderStatus(id: number, status: "completed" | "refunded") {
+export function updateOrderStatus(
+  id: number,
+  status: "completed" | "refunded" | "in_progress",
+  data: { refund_reject_reason?: string } = {},
+) {
   return request<AdminOrder>(`/orders/${id}/status`, {
     method: "PUT",
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, ...data }),
   });
 }
 
@@ -537,6 +552,7 @@ export type AdminMiniappHealthRecord = {
 
 export type AdminMiniappUser = {
   id: number;
+  openid: string;
   nickname: string;
   avatar_url: string;
   phone: string;
@@ -549,6 +565,7 @@ export type AdminMiniappUser = {
   status: string;
   membership_status: "active" | "none";
   membership_expires_at: string;
+  membership_expires_at_datetime: string | null;
   last_login_at: string | null;
   created_at: string | null;
   archive?: {
@@ -572,6 +589,13 @@ export function getMiniappUserList(params: AdminMiniappUserListParams = {}) {
 
 export function getMiniappUser(id: number) {
   return request<AdminMiniappUser>(`/users/${id}`);
+}
+
+export function renewMiniappUserMembership(id: number, membership_expires_at: string) {
+  return request<AdminMiniappUser>(`/users/${id}/membership`, {
+    method: "PUT",
+    body: JSON.stringify({ membership_expires_at }),
+  });
 }
 
 export type AgreementType = "user_agreement" | "privacy_policy";

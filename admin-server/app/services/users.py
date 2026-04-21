@@ -1,5 +1,6 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 
+from app.extensions import db
 from app.models import MiniappHealthRecord, MiniappUser
 from app.utils.time import beijing_iso, beijing_strftime
 
@@ -20,6 +21,7 @@ class UserService:
             age = now.year - user.birthday.year - ((now.month, now.day) < (user.birthday.month, user.birthday.day))
         data = {
             "id": user.id,
+            "openid": user.openid or "",
             "nickname": user.nickname or "",
             "avatar_url": user.avatar_url or "",
             "phone": user.phone or "",
@@ -32,6 +34,7 @@ class UserService:
             "status": user.status,
             "membership_status": "active" if user.membership_expires_at and user.membership_expires_at > datetime.utcnow() else "none",
             "membership_expires_at": beijing_strftime(user.membership_expires_at, "%Y-%m-%d") if user.membership_expires_at else "",
+            "membership_expires_at_datetime": beijing_iso(user.membership_expires_at),
             "last_login_at": beijing_iso(user.last_login_at),
             "created_at": beijing_iso(user.created_at),
         }
@@ -89,6 +92,31 @@ class UserService:
         if not user:
             raise UserError("用户不存在", 404)
         return UserService.serialize_user(user, with_archive=True)
+
+    @staticmethod
+    def renew_membership(user_id: int, data: dict) -> dict:
+        user = MiniappUser.query.filter(MiniappUser.id == user_id, MiniappUser.deleted_at.is_(None)).first()
+        if not user:
+            raise UserError("用户不存在", 404)
+
+        expires_at = UserService._parse_beijing_datetime(data.get("membership_expires_at"))
+        user.membership_expires_at = expires_at
+        user.membership_status = "active" if expires_at > datetime.utcnow() else "none"
+        db.session.commit()
+        return UserService.serialize_user(user, with_archive=True)
+
+    @staticmethod
+    def _parse_beijing_datetime(value) -> datetime:
+        if not value:
+            raise UserError("请选择会员有效期")
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError:
+            raise UserError("会员有效期格式不正确") from None
+
+        if parsed.tzinfo is not None:
+            return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed - timedelta(hours=8)
 
     @staticmethod
     def _positive_int(value, default: int, maximum: int | None = None) -> int:

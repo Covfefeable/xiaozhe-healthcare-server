@@ -14,11 +14,12 @@ class OrderError(Exception):
         super().__init__(message)
 
 
-ORDER_STATUS = {"pending_payment", "in_progress", "completed", "refunded"}
+ORDER_STATUS = {"pending_payment", "in_progress", "completed", "pending_refund", "refunded"}
 ORDER_STATUS_LABEL = {
     "pending_payment": "待支付",
     "in_progress": "服务进行中",
     "completed": "已完成",
+    "pending_refund": "退款中",
     "refunded": "已退款",
 }
 
@@ -135,6 +136,41 @@ class OrderService:
         db.session.commit()
 
     @staticmethod
+    def request_refund(user: MiniappUser, order_id: int, data: dict) -> dict:
+        order = Order.query.filter(
+            Order.id == order_id,
+            Order.user_id == user.id,
+            Order.deleted_at.is_(None),
+        ).first()
+        if not order:
+            raise OrderError("订单不存在", 404)
+        if order.status == "pending_refund":
+            return OrderService.serialize(order)
+        if order.status == "refunded":
+            raise OrderError("订单已退款")
+        if order.status not in {"in_progress", "completed"}:
+            raise OrderError("当前订单状态不支持申请退款")
+
+        reason = (data.get("reason") or "").strip()
+        description = (data.get("description") or "").strip()
+        image_urls = data.get("image_urls") or []
+        if not reason:
+            raise OrderError("请填写退款原因")
+        if not isinstance(image_urls, list):
+            raise OrderError("退款图片格式不正确")
+
+        now = datetime.utcnow()
+        order.status = "pending_refund"
+        order.refund_reason = reason[:100]
+        order.refund_description = description[:2000]
+        order.refund_image_urls = [str(image_url) for image_url in image_urls if str(image_url).strip()][:9]
+        order.refund_requested_at = now
+        order.refund_handled_at = None
+        order.refund_reject_reason = ""
+        db.session.commit()
+        return OrderService.serialize(order)
+
+    @staticmethod
     def serialize(order: Order, brief: bool = False) -> dict:
         items = [OrderService.serialize_item(item) for item in order.items]
         first_item = items[0] if items else {}
@@ -158,6 +194,15 @@ class OrderService:
             "created_at": beijing_iso(order.created_at),
             "paid_at": beijing_iso(order.paid_at),
             "completed_at": beijing_iso(order.completed_at),
+            "refunded_at": beijing_iso(order.refunded_at),
+            "refund": {
+                "reason": order.refund_reason or "",
+                "description": order.refund_description or "",
+                "image_urls": order.refund_image_urls or [],
+                "requested_at": beijing_iso(order.refund_requested_at),
+                "handled_at": beijing_iso(order.refund_handled_at),
+                "reject_reason": order.refund_reject_reason or "",
+            },
             "items": items,
             "progress": OrderService._progress(order),
         }
@@ -185,7 +230,7 @@ class OrderService:
 
     @staticmethod
     def _progress(order: Order) -> list[dict]:
-        paid_done = order.status in {"in_progress", "completed", "refunded"}
+        paid_done = order.status in {"in_progress", "completed", "pending_refund", "refunded"}
         completed_done = order.status in {"completed", "refunded"}
         events = [
             {
@@ -211,12 +256,24 @@ class OrderService:
                     "active": order.status == "in_progress",
                 },
             )
-        if order.status in {"completed", "refunded"}:
+        if order.status in {"completed", "pending_refund", "refunded"}:
+            if order.status == "pending_refund":
+                title = "退款申请已提交"
+                event_time = order.refund_requested_at
+                done = True
+            elif order.status == "completed":
+                title = "服务已完成"
+                event_time = order.completed_at
+                done = completed_done
+            else:
+                title = "订单已退款"
+                event_time = order.refunded_at
+                done = completed_done
             events.append(
                 {
-                    "title": "服务已完成" if order.status == "completed" else "订单已退款",
-                    "time": _format_time(order.completed_at or order.refunded_at),
-                    "done": completed_done,
+                    "title": title,
+                    "time": _format_time(event_time),
+                    "done": done,
                     "active": True,
                 }
             )
@@ -232,6 +289,8 @@ class OrderService:
             return "服务进行中，工作人员将持续处理您的订单。"
         if order.status == "completed":
             return "本次服务已完成，感谢您的使用。"
+        if order.status == "pending_refund":
+            return "退款申请已提交，工作人员会尽快处理。"
         if order.status == "refunded":
             return "订单已退款，服务已终止。"
         return ""

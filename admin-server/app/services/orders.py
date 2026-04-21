@@ -13,11 +13,12 @@ class OrderError(Exception):
         super().__init__(message)
 
 
-ORDER_STATUS = {"pending_payment", "in_progress", "completed", "refunded"}
+ORDER_STATUS = {"pending_payment", "in_progress", "completed", "pending_refund", "refunded"}
 ORDER_STATUS_LABEL = {
     "pending_payment": "待支付",
     "in_progress": "进行中",
     "completed": "已完成",
+    "pending_refund": "退款中",
     "refunded": "已退款",
 }
 
@@ -55,6 +56,15 @@ class OrderService:
             "payment_method": order.payment_method,
             "paid_at": beijing_iso(order.paid_at),
             "completed_at": beijing_iso(order.completed_at),
+            "refunded_at": beijing_iso(order.refunded_at),
+            "refund": {
+                "reason": order.refund_reason or "",
+                "description": order.refund_description or "",
+                "image_urls": order.refund_image_urls or [],
+                "requested_at": beijing_iso(order.refund_requested_at),
+                "handled_at": beijing_iso(order.refund_handled_at),
+                "reject_reason": order.refund_reject_reason or "",
+            },
             "created_at": beijing_iso(order.created_at),
             "updated_at": beijing_iso(order.updated_at),
             "items": items,
@@ -94,20 +104,33 @@ class OrderService:
         return order
 
     @staticmethod
-    def update_status(order_id: int, status: str) -> Order:
-        if status not in {"completed", "refunded"}:
-            raise OrderError("当前仅支持更新为已完成或已退款")
+    def update_status(order_id: int, status: str, data: dict | None = None) -> Order:
+        if status not in {"completed", "refunded", "in_progress"}:
+            raise OrderError("当前状态操作不支持")
         order = OrderService.get_order(order_id)
         if order.product_type == "membership" and status == "completed":
             raise OrderError("会员订单无需后台手动完成")
-        if order.status != "in_progress":
-            raise OrderError("只有进行中的订单可以更新状态")
-        order.status = status
         now = datetime.utcnow()
         if status == "completed":
+            if order.status != "in_progress":
+                raise OrderError("只有进行中的订单可以标记完成")
+            order.status = status
             order.completed_at = now
         if status == "refunded":
+            if order.status not in {"in_progress", "completed", "pending_refund"}:
+                raise OrderError("当前订单状态不支持退款")
+            order.status = status
             order.refunded_at = now
+            order.refund_handled_at = now
+        if status == "in_progress":
+            if order.status != "pending_refund":
+                raise OrderError("只有退款中的订单可以拒绝退款")
+            reject_reason = ((data or {}).get("refund_reject_reason") or "").strip()
+            if not reject_reason:
+                raise OrderError("请填写拒绝退款原因")
+            order.status = status
+            order.refund_handled_at = now
+            order.refund_reject_reason = reject_reason[:255]
         db.session.commit()
         return order
 

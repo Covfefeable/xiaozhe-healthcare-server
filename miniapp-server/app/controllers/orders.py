@@ -61,3 +61,12 @@ def cancel_order(order_id: int):
     except (AuthError, OrderError) as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data=None, message="取消成功")
+
+
+def request_refund(order_id: int):
+    try:
+        user = _current_user()
+        order = OrderService.request_refund(user, order_id, request.get_json(silent=True) or {})
+    except (AuthError, OrderError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=order, message="退款申请已提交")

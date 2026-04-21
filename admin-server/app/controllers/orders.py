@@ -40,7 +40,8 @@ def update_status(order_id: int):
     if auth_error:
         return auth_error
     try:
-        order = OrderService.update_status(order_id, (request.get_json(silent=True) or {}).get("status"))
+        payload = request.get_json(silent=True) or {}
+        order = OrderService.update_status(order_id, payload.get("status"), payload)
     except OrderError as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data=OrderService.serialize(order), message="保存成功")

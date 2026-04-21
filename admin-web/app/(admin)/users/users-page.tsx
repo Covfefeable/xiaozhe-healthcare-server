@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import {
   getMiniappUser,
   getMiniappUserList,
+  renewMiniappUserMembership,
   type AdminMiniappHealthRecord,
   type AdminMiniappUser,
 } from "@/lib/api";
@@ -33,6 +34,16 @@ type FilterValues = {
 
 function formatDateTime(value: string | null) {
   return value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "-";
+}
+
+function toDatetimeLocalValue(value?: string | null) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().slice(0, 16);
 }
 
 function RecordList({ items }: { items?: AdminMiniappHealthRecord[] }) {
@@ -71,11 +82,15 @@ function RecordList({ items }: { items?: AdminMiniappHealthRecord[] }) {
 export function UsersPage() {
   const [messageApi, contextHolder] = message.useMessage();
   const [filterForm] = Form.useForm<FilterValues>();
+  const [renewForm] = Form.useForm<{ membership_expires_at: string }>();
   const [items, setItems] = useState<AdminMiniappUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [renewLoading, setRenewLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<AdminMiniappUser | null>(null);
+  const [renewUser, setRenewUser] = useState<AdminMiniappUser | null>(null);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
 
   const loadUsers = async (nextPage = pagination.current, nextPageSize = pagination.pageSize) => {
@@ -117,6 +132,37 @@ export function UsersPage() {
     }
   };
 
+  const openRenewModal = (user: AdminMiniappUser) => {
+    setRenewUser(user);
+    renewForm.setFieldsValue({
+      membership_expires_at: toDatetimeLocalValue(user.membership_expires_at_datetime),
+    });
+    setRenewOpen(true);
+  };
+
+  const handleRenew = async () => {
+    if (!renewUser) {
+      return;
+    }
+    const values = await renewForm.validateFields();
+    setRenewLoading(true);
+    try {
+      const updatedUser = await renewMiniappUserMembership(
+        renewUser.id,
+        values.membership_expires_at,
+      );
+      messageApi.success("续期成功");
+      setRenewOpen(false);
+      setRenewUser(null);
+      setCurrentUser((value) => (value?.id === updatedUser.id ? updatedUser : value));
+      await loadUsers(pagination.current, pagination.pageSize);
+    } catch (error) {
+      messageApi.error(error instanceof Error ? error.message : "续期失败");
+    } finally {
+      setRenewLoading(false);
+    }
+  };
+
   const columns: TableProps<AdminMiniappUser>["columns"] = [
     {
       title: "用户",
@@ -145,11 +191,16 @@ export function UsersPage() {
       title: "操作",
       key: "action",
       fixed: "right",
-      width: 110,
+      width: 160,
       render: (_, record) => (
-        <Button type="link" onClick={() => void openDetail(record)}>
-          查看详情
-        </Button>
+        <Space size={4}>
+          <Button type="link" onClick={() => void openDetail(record)}>
+            查看详情
+          </Button>
+          <Button type="link" onClick={() => openRenewModal(record)}>
+            续期
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -208,7 +259,13 @@ export function UsersPage() {
         title="用户详情"
         open={detailOpen}
         onCancel={() => setDetailOpen(false)}
-        footer={null}
+        footer={
+          currentUser ? (
+            <Button type="primary" onClick={() => openRenewModal(currentUser)}>
+              续期
+            </Button>
+          ) : null
+        }
         width={860}
         loading={detailLoading}
       >
@@ -222,9 +279,11 @@ export function UsersPage() {
                 </Space>
               </Descriptions.Item>
               <Descriptions.Item label="手机号">{currentUser.phone || "-"}</Descriptions.Item>
+              <Descriptions.Item label="OpenID">{currentUser.openid || "-"}</Descriptions.Item>
               <Descriptions.Item label="性别">{currentUser.gender_label || "-"}</Descriptions.Item>
               <Descriptions.Item label="出生日期">{currentUser.birthday || "-"}</Descriptions.Item>
               <Descriptions.Item label="年龄">{currentUser.age === null ? "-" : `${currentUser.age}岁`}</Descriptions.Item>
+              <Descriptions.Item label="最近登录">{formatDateTime(currentUser.last_login_at)}</Descriptions.Item>
               <Descriptions.Item label="会员状态">
                 {currentUser.membership_status === "active" ? "会员" : "普通用户"}
               </Descriptions.Item>
@@ -238,6 +297,29 @@ export function UsersPage() {
             <RecordList items={currentUser.archive?.medication_records} />
           </Space>
         ) : null}
+      </Modal>
+
+      <Modal
+        title="会员续期"
+        open={renewOpen}
+        confirmLoading={renewLoading}
+        okText="保存"
+        cancelText="取消"
+        onCancel={() => setRenewOpen(false)}
+        onOk={() => void handleRenew()}
+      >
+        <Form form={renewForm} layout="vertical">
+          <Form.Item label="用户">
+            {renewUser ? `${renewUser.display_name}（${renewUser.phone || "无手机号"}）` : "-"}
+          </Form.Item>
+          <Form.Item
+            label="会员有效期"
+            name="membership_expires_at"
+            rules={[{ required: true, message: "请选择会员有效期" }]}
+          >
+            <Input type="datetime-local" />
+          </Form.Item>
+        </Form>
       </Modal>
     </>
   );

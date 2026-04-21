@@ -11,3 +11,8 @@ def list_users():
 @api_bp.get("/users/<int:user_id>")
 def get_user(user_id: int):
     return users.get_user(user_id)
+
+
+@api_bp.put("/users/<int:user_id>/membership")
+def renew_membership(user_id: int):
+    return users.renew_membership(user_id)
