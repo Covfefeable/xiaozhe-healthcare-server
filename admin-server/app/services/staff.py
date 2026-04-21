@@ -11,6 +11,7 @@ class StaffError(Exception):
 
 
 STAFF_STATUS = {"active", "inactive"}
+ASSISTANT_TYPES = {"health_manager", "medical_assistant"}
 
 
 class StaffService:
@@ -19,7 +20,7 @@ class StaffService:
 
     @classmethod
     def serialize(cls, item) -> dict:
-        return {
+        data = {
             "id": item.id,
             "avatar_url": item.avatar_url or "",
             "name": item.name,
@@ -29,6 +30,9 @@ class StaffService:
             "created_at": beijing_iso(item.created_at),
             "updated_at": beijing_iso(item.updated_at),
         }
+        if hasattr(item, "assistant_type"):
+            data["assistant_type"] = item.assistant_type or "health_manager"
+        return data
 
     @classmethod
     def list_items(cls, args) -> dict:
@@ -49,6 +53,11 @@ class StaffService:
             if status not in STAFF_STATUS:
                 raise StaffError("状态参数不正确")
             query = query.filter(cls.model.status == status)
+        assistant_type = (args.get("assistant_type") or "").strip()
+        if assistant_type and hasattr(cls.model, "assistant_type"):
+            if assistant_type not in ASSISTANT_TYPES:
+                raise StaffError("助理类型参数不正确")
+            query = query.filter(cls.model.assistant_type == assistant_type)
         total = query.count()
         items = (
             query.order_by(cls.model.created_at.desc())
@@ -149,6 +158,15 @@ class StaffService:
 class AssistantService(StaffService):
     model = Assistant
     label = "助理"
+
+    @classmethod
+    def _validate_payload(cls, data: dict) -> dict:
+        payload = super()._validate_payload(data)
+        assistant_type = (data.get("assistant_type") or "health_manager").strip()
+        if assistant_type not in ASSISTANT_TYPES:
+            raise StaffError("助理类型参数不正确")
+        payload["assistant_type"] = assistant_type
+        return payload
 
 
 class CustomerServiceService(StaffService):

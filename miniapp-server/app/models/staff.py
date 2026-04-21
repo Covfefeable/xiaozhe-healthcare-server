@@ -20,5 +20,6 @@ class Assistant(BaseModel):
     name = db.Column(db.String(50), nullable=False)
     phone = db.Column(db.String(20), nullable=False)
     status = db.Column(db.String(20), nullable=False)
+    assistant_type = db.Column(db.String(30), nullable=False, default="health_manager")
     remark = db.Column(db.String(255), nullable=False, default="")
     deleted_at = db.Column(db.DateTime, nullable=True)

@@ -20,7 +20,7 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 
-import type { StaffItem, StaffListParams, StaffPayload, StaffStatus } from "@/lib/api";
+import type { AssistantType, StaffItem, StaffListParams, StaffPayload, StaffStatus } from "@/lib/api";
 import "./staff.css";
 
 type StaffFormValues = {
@@ -28,6 +28,7 @@ type StaffFormValues = {
   name: string;
   phone: string;
   status: StaffStatus;
+  assistant_type?: AssistantType;
   remark?: string;
 };
 
@@ -42,6 +43,7 @@ type StaffManagementPageProps = {
   createItem: (data: StaffPayload) => Promise<StaffItem>;
   updateItem: (id: number, data: StaffPayload) => Promise<StaffItem>;
   deleteItem: (id: number) => Promise<null>;
+  staffTypeOptions?: { label: string; value: AssistantType }[];
 };
 
 const statusOptions = [
@@ -59,13 +61,17 @@ function fileToBase64(file: File) {
 }
 
 function toPayload(values: StaffFormValues): StaffPayload {
-  return {
+  const payload: StaffPayload = {
     avatar_url: values.avatar_url ?? "",
     name: values.name.trim(),
     phone: values.phone.trim(),
     status: values.status,
     remark: values.remark?.trim() ?? "",
   };
+  if (values.assistant_type) {
+    payload.assistant_type = values.assistant_type;
+  }
+  return payload;
 }
 
 function formatDate(value: string | null) {
@@ -87,6 +93,7 @@ export function StaffManagementPage({
   createItem,
   updateItem,
   deleteItem,
+  staffTypeOptions,
 }: StaffManagementPageProps) {
   const [messageApi, contextHolder] = message.useMessage();
   const [filterForm] = Form.useForm<StaffListParams>();
@@ -135,6 +142,7 @@ export function StaffManagementPage({
       name: "",
       phone: "",
       status: "active",
+      assistant_type: staffTypeOptions?.[0]?.value,
       remark: "",
     });
     setAvatarUrl("");
@@ -148,6 +156,7 @@ export function StaffManagementPage({
       name: item.name,
       phone: item.phone,
       status: item.status,
+      assistant_type: item.assistant_type ?? staffTypeOptions?.[0]?.value,
       remark: item.remark,
     });
     setAvatarUrl(item.avatar_url ?? "");
@@ -206,6 +215,18 @@ export function StaffManagementPage({
     },
     { title: "姓名", dataIndex: "name", key: "name", width: 140 },
     { title: "手机号", dataIndex: "phone", key: "phone", width: 160 },
+    ...(staffTypeOptions
+      ? [
+          {
+            title: "助理类型",
+            dataIndex: "assistant_type",
+            key: "assistant_type",
+            width: 130,
+            render: (value: AssistantType) =>
+              staffTypeOptions.find((option) => option.value === value)?.label ?? "-",
+          },
+        ]
+      : []),
     {
       title: "状态",
       dataIndex: "status",
@@ -272,6 +293,11 @@ export function StaffManagementPage({
             <Form.Item name="status" label="状态">
               <Select allowClear options={statusOptions} placeholder="全部" style={{ width: 140 }} />
             </Form.Item>
+            {staffTypeOptions ? (
+              <Form.Item name="assistant_type" label="助理类型">
+                <Select allowClear options={staffTypeOptions} placeholder="全部" style={{ width: 160 }} />
+              </Form.Item>
+            ) : null}
             <Form.Item>
               <Space>
                 <Button type="primary" onClick={() => void loadItems(1, pagination.pageSize)}>
@@ -345,6 +371,16 @@ export function StaffManagementPage({
             >
               <Select options={statusOptions} />
             </Form.Item>
+            {staffTypeOptions ? (
+              <Form.Item
+                className="staff-page__form-item"
+                label="助理类型"
+                name="assistant_type"
+                rules={[{ required: true, message: "请选择助理类型" }]}
+              >
+                <Select options={staffTypeOptions} />
+              </Form.Item>
+            ) : null}
           </Flex>
           <Form.Item label="头像">
             <Space align="start" size={16}>

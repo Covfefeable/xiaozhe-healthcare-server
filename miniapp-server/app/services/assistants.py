@@ -1,6 +1,12 @@
 from app.models import Assistant, MiniappUser
 
 
+ASSISTANT_TYPE_LABELS = {
+    "health_manager": "健康管家",
+    "medical_assistant": "医疗助理",
+}
+
+
 class AssistantError(Exception):
     def __init__(self, message: str, code: int = 400):
         self.message = message
@@ -11,13 +17,15 @@ class AssistantError(Exception):
 class AssistantService:
     @staticmethod
     def serialize(assistant: Assistant) -> dict:
+        assistant_type = assistant.assistant_type or "health_manager"
         return {
             "id": str(assistant.id),
             "avatarUrl": assistant.avatar_url or "",
             "avatar": assistant.avatar_url or "",
             "name": assistant.name,
             "phone": assistant.phone,
-            "title": "健康助理",
+            "title": ASSISTANT_TYPE_LABELS.get(assistant_type, "健康管家"),
+            "assistant_type": assistant_type,
             "remark": assistant.remark or "",
             "status": assistant.status,
         }

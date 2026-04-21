@@ -375,6 +375,7 @@ export function deleteDoctor(id: number) {
 }
 
 export type StaffStatus = "active" | "inactive";
+export type AssistantType = "health_manager" | "medical_assistant";
 
 export type StaffItem = {
   id: number;
@@ -382,6 +383,7 @@ export type StaffItem = {
   name: string;
   phone: string;
   status: StaffStatus;
+  assistant_type?: AssistantType;
   remark: string;
   created_at: string | null;
   updated_at: string | null;
@@ -392,12 +394,14 @@ export type StaffPayload = {
   name: string;
   phone: string;
   status: StaffStatus;
+  assistant_type?: AssistantType;
   remark?: string;
 };
 
 export type StaffListParams = {
   keyword?: string;
   status?: StaffStatus;
+  assistant_type?: AssistantType;
   page?: number;
   page_size?: number;
 };

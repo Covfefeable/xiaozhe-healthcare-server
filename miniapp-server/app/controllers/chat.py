@@ -30,6 +30,15 @@ def create_customer_service_conversation():
     return success_response(data=conversation)
 
 
+def create_health_manager_conversation():
+    try:
+        user = _current_user()
+        conversation = ChatService.get_or_create_health_manager_conversation(user)
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=conversation)
+
+
 def create_assistant_user_conversation():
     try:
         user = _current_user()

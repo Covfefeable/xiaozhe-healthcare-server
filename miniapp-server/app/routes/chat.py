@@ -18,6 +18,11 @@ def create_customer_service_conversation():
     return chat.create_customer_service_conversation()
 
 
+@api_bp.post("/chat/health-manager-conversations")
+def create_health_manager_conversation():
+    return chat.create_health_manager_conversation()
+
+
 @api_bp.post("/chat/assistant-user-conversations")
 def create_assistant_user_conversation():
     return chat.create_assistant_user_conversation()

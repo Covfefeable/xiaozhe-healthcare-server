@@ -121,6 +121,55 @@ class ChatService:
         return ChatService.serialize_conversation(conversation, user)
 
     @staticmethod
+    def get_or_create_health_manager_conversation(user: MiniappUser) -> dict:
+        conversation = ChatConversation.query.filter(
+            ChatConversation.conversation_type == "single",
+            ChatConversation.target_type == "assistant",
+            ChatConversation.owner_user_id == user.id,
+            ChatConversation.deleted_at.is_(None),
+        ).first()
+        if conversation:
+            return ChatService.serialize_conversation(conversation, user)
+
+        assistant = (
+            Assistant.query.filter(
+                Assistant.status == "active",
+                Assistant.assistant_type == "health_manager",
+                Assistant.deleted_at.is_(None),
+            )
+            .order_by(func.random())
+            .first()
+        )
+        if not assistant:
+            raise ChatError("暂无可用健康管家", 404)
+
+        conversation = ChatConversation(
+            conversation_type="single",
+            target_type="assistant",
+            title=assistant.name,
+            owner_user_id=user.id,
+            assistant_id=assistant.id,
+        )
+        db.session.add(conversation)
+        db.session.flush()
+        db.session.add_all(
+            [
+                ChatConversationMember(
+                    conversation_id=conversation.id,
+                    member_type="user",
+                    member_id=user.id,
+                ),
+                ChatConversationMember(
+                    conversation_id=conversation.id,
+                    member_type="assistant",
+                    member_id=assistant.id,
+                ),
+            ]
+        )
+        db.session.commit()
+        return ChatService.serialize_conversation(conversation, user)
+
+    @staticmethod
     def get_or_create_assistant_user_conversation(user: MiniappUser, phone: str) -> dict:
         assistant = ChatService._staff_member(user, "assistant")
         target_phone = (phone or "").strip()
@@ -393,8 +442,8 @@ class ChatService:
             return {
                 "id": item.id if item else conversation.assistant_id,
                 "name": item.name if item else conversation.title,
-                "title": "助理",
-                "label": "助理",
+                "title": "健康管家",
+                "label": "健康管家",
                 "avatar": item.avatar_url if item else "",
             }
         doctor = conversation.doctor

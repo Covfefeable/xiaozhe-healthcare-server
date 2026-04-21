@@ -19,6 +19,8 @@ class StaffMixin:
 class Assistant(StaffMixin, BaseModel):
     __tablename__ = "admin_assistants"
 
+    assistant_type = db.Column(db.String(30), nullable=False, default="health_manager", index=True)
+
 
 class CustomerService(StaffMixin, BaseModel):
     __tablename__ = "admin_customer_services"
