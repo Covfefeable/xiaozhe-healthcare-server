@@ -1,3 +1,4 @@
+from .agreement import Agreement
 from .banner import Banner
 from .base import BaseModel
 from .chat import (
@@ -17,6 +18,7 @@ from .user import MiniappHealthRecord, MiniappUser, MiniappUserMembership
 
 __all__ = [
     "Assistant",
+    "Agreement",
     "Banner",
     "BaseModel",
     "CartItem",

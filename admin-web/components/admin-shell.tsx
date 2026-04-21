@@ -49,6 +49,9 @@ const text = {
   users: "\u7528\u6237\u7ba1\u7406",
   banners: "Banner \u7ba1\u7406",
   news: "\u8d44\u8baf\u7ba1\u7406",
+  agreements: "\u534f\u8bae\u7ba1\u7406",
+  userAgreement: "\u7528\u6237\u534f\u8bae\u7ba1\u7406",
+  privacyPolicy: "\u9690\u79c1\u653f\u7b56\u7ba1\u7406",
   personnel: "\u4eba\u5458\u7ba1\u7406",
   departments: "\u79d1\u5ba4\u7ba1\u7406",
   doctors: "\u533b\u751f\u7ba1\u7406",
@@ -121,6 +124,21 @@ const menuItems = [
     icon: <FileTextOutlined />,
     label: text.news,
   },
+  {
+    key: "agreements",
+    icon: <FileTextOutlined />,
+    label: text.agreements,
+    children: [
+      {
+        key: "agreement-user",
+        label: text.userAgreement,
+      },
+      {
+        key: "agreement-privacy",
+        label: text.privacyPolicy,
+      },
+    ],
+  },
 ];
 
 type AdminShellProps = {
@@ -133,7 +151,11 @@ export function AdminShell({ children }: AdminShellProps) {
   const [messageApi, contextHolder] = message.useMessage();
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<AdminUser | null>(null);
-  const activeKey = pathname.startsWith("/products")
+  const activeKey = pathname.startsWith("/agreements")
+    ? pathname.startsWith("/agreements/privacy")
+      ? "agreement-privacy"
+      : "agreement-user"
+    : pathname.startsWith("/products")
     ? "products"
     : pathname.startsWith("/orders")
       ? "orders"
@@ -206,6 +228,14 @@ export function AdminShell({ children }: AdminShellProps) {
       router.push("/news");
       return;
     }
+    if (key === "agreement-user") {
+      router.push("/agreements/user");
+      return;
+    }
+    if (key === "agreement-privacy") {
+      router.push("/agreements/privacy");
+      return;
+    }
     router.push("/");
   };
 
@@ -256,7 +286,7 @@ export function AdminShell({ children }: AdminShellProps) {
             items={menuItems}
             mode="inline"
             onClick={handleMenuClick}
-            defaultOpenKeys={["personnel"]}
+            defaultOpenKeys={["personnel", "agreements"]}
             selectedKeys={[activeKey]}
             theme="dark"
           />
@@ -297,6 +327,10 @@ export function AdminShell({ children }: AdminShellProps) {
                               ? text.customerServices
                             : activeKey === "news"
                               ? text.news
+                            : activeKey === "agreement-user"
+                              ? text.userAgreement
+                            : activeKey === "agreement-privacy"
+                              ? text.privacyPolicy
                               : text.home,
                       },
                     ]}

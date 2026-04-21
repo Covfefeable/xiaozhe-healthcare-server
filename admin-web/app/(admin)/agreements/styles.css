@@ -1,0 +1,27 @@
+.agreements-page {
+  display: grid;
+  gap: 16px;
+}
+
+.agreements-page__heading {
+  min-height: 44px;
+}
+
+.agreements-page__heading .ant-typography {
+  margin: 0 !important;
+}
+
+.agreements-page__card {
+  border: 1px solid #e3ebea;
+  box-shadow: none;
+}
+
+.agreements-page__form {
+  max-width: 980px;
+}
+
+.agreements-page__meta {
+  margin-top: 8px;
+  color: #6f7f7c;
+  font-size: 13px;
+}

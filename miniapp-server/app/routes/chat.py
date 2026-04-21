@@ -71,3 +71,18 @@ def invite_assistants(conversation_id: int):
 @api_bp.post("/chat/conversations/<int:conversation_id>/read")
 def mark_read(conversation_id: int):
     return chat.mark_read(conversation_id)
+
+
+@api_bp.patch("/chat/conversations/<int:conversation_id>/group")
+def rename_group(conversation_id: int):
+    return chat.rename_group(conversation_id)
+
+
+@api_bp.post("/chat/conversations/<int:conversation_id>/leave")
+def leave_group(conversation_id: int):
+    return chat.leave_group(conversation_id)
+
+
+@api_bp.post("/chat/conversations/<int:conversation_id>/dissolve")
+def dissolve_group(conversation_id: int):
+    return chat.dissolve_group(conversation_id)

@@ -1,5 +1,6 @@
 from .base import BaseModel
 from .admin_user import AdminUser
+from .agreement import Agreement, AgreementType
 from .banner import Banner
 from .department import Department
 from .doctor import Doctor
@@ -10,6 +11,8 @@ from .staff import Assistant, CustomerService
 
 __all__ = [
     "AdminUser",
+    "Agreement",
+    "AgreementType",
     "Assistant",
     "Banner",
     "BaseModel",

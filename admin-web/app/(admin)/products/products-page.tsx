@@ -522,20 +522,23 @@ export function ProductsPage() {
               <Select
                 options={productTypeOptions}
                 onChange={(value: ProductType) => {
-                  productForm.setFieldValue("validity_days", value === "membership" ? 30 : undefined);
+                  const currentValidityDays = productForm.getFieldValue("validity_days");
+                  productForm.setFieldValue(
+                    "validity_days",
+                    value === "membership" ? currentValidityDays ?? 30 : undefined,
+                  );
                 }}
               />
             </Form.Item>
-            {selectedProductType === "membership" ? (
-              <Form.Item
-                label="有效期"
-                name="validity_days"
-                rules={[{ required: true, message: "请选择有效期" }]}
-                className="products-page__form-item"
-              >
-                <Select options={validityOptions} />
-              </Form.Item>
-            ) : null}
+            <Form.Item
+              label="有效期"
+              name="validity_days"
+              rules={[{ required: selectedProductType === "membership", message: "请选择有效期" }]}
+              className="products-page__form-item"
+              hidden={selectedProductType !== "membership"}
+            >
+              <Select options={validityOptions} />
+            </Form.Item>
             <Form.Item label="排序" name="sort_order" className="products-page__form-item">
               <InputNumber precision={0} style={{ width: "100%" }} />
             </Form.Item>

@@ -512,6 +512,67 @@ class ChatService:
             db.session.commit()
 
     @staticmethod
+    def rename_group(user: MiniappUser, conversation_id: int, title: str, role: str = "user") -> dict:
+        conversation = ChatService.get_conversation(user, conversation_id, role)
+        if conversation.conversation_type != "group":
+            raise ChatError("仅群聊可以修改名称")
+        if not ChatService._can_invite_members(user, role, conversation):
+            raise ChatError("无权修改群名称", 403)
+        next_title = (title or "").strip()
+        if not next_title:
+            raise ChatError("请输入群名称")
+        conversation.title = next_title[:100]
+        member_type, member_id = ChatService._viewer_member(user, role)
+        profile = ChatService._member_profile(member_type, member_id)
+        ChatService._add_system_message(
+            conversation,
+            f"{profile['name'] or '成员'}修改群名称为“{conversation.title}”",
+            exclude_member=(member_type, member_id),
+        )
+        db.session.commit()
+        return ChatService.serialize_conversation(conversation, user, role)
+
+    @staticmethod
+    def leave_group(user: MiniappUser, conversation_id: int, role: str = "user") -> None:
+        conversation = ChatService.get_conversation(user, conversation_id, role)
+        if conversation.conversation_type != "group":
+            raise ChatError("仅群聊可以退出")
+        member_type, member_id = ChatService._viewer_member(user, role)
+        member = ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation.id,
+            ChatConversationMember.member_type == member_type,
+            ChatConversationMember.member_id == member_id,
+            ChatConversationMember.deleted_at.is_(None),
+        ).first()
+        if not member:
+            raise ChatError("会话不存在", 404)
+        member.deleted_at = datetime.utcnow()
+        name = member.display_name or ChatService._member_profile(member_type, member_id)["name"] or "成员"
+        ChatService._add_system_message(
+            conversation,
+            f"{name}已退出群聊",
+            exclude_member=(member_type, member_id),
+        )
+        db.session.commit()
+
+    @staticmethod
+    def dissolve_group(user: MiniappUser, conversation_id: int, role: str = "user") -> None:
+        conversation = ChatService.get_conversation(user, conversation_id, role)
+        if conversation.conversation_type != "group":
+            raise ChatError("仅群聊可以解散")
+        if not ChatService._can_invite_members(user, role, conversation):
+            raise ChatError("无权解散群聊", 403)
+        now = datetime.utcnow()
+        conversation.deleted_at = now
+        members = ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation.id,
+            ChatConversationMember.deleted_at.is_(None),
+        ).all()
+        for member in members:
+            member.deleted_at = now
+        db.session.commit()
+
+    @staticmethod
     def serialize_conversation(conversation: ChatConversation, user: MiniappUser, role: str = "user") -> dict:
         member_type, member_id = ChatService._viewer_member(user, role)
         target = ChatService._target_profile(conversation, role, member_type, member_id)
@@ -657,6 +718,40 @@ class ChatService:
                 member.unread_count += 1
 
     @staticmethod
+    def _add_system_message(
+        conversation: ChatConversation,
+        content: str,
+        exclude_member: tuple[str, int] | None = None,
+    ) -> ChatMessage:
+        now = datetime.utcnow()
+        message = ChatMessage(
+            conversation_id=conversation.id,
+            sender_type="system",
+            sender_id=0,
+            sender_name="绯荤粺",
+            sender_avatar="",
+            sender_role_label="绯荤粺",
+            message_type="text",
+            content=content,
+            sent_at=now,
+        )
+        db.session.add(message)
+        db.session.flush()
+        conversation.last_message_id = message.id
+        conversation.last_message_type = "text"
+        conversation.last_message_preview = content
+        conversation.last_message_at = now
+        members = ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation.id,
+            ChatConversationMember.deleted_at.is_(None),
+        ).all()
+        for member in members:
+            if exclude_member and member.member_type == exclude_member[0] and member.member_id == exclude_member[1]:
+                continue
+            member.unread_count += 1
+        return message
+
+    @staticmethod
     def _target_profile(
         conversation: ChatConversation,
         role: str = "user",
@@ -778,6 +873,16 @@ class ChatService:
     @staticmethod
     def _conversation_for_health_manager(user: MiniappUser, conversation_id: int):
         assistant = ChatService._staff_member(user, "assistant")
+        conversation = ChatService.get_conversation(user, conversation_id, "assistant")
+        member = ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation.id,
+            ChatConversationMember.member_type == "assistant",
+            ChatConversationMember.member_id == assistant.id,
+            ChatConversationMember.deleted_at.is_(None),
+        ).first()
+        if not member:
+            raise ChatError("无权操作该会话", 403)
+        return conversation, assistant
         if assistant.assistant_type != "health_manager":
             raise ChatError("仅健康管家可以邀请成员", 403)
         conversation = ChatService.get_conversation(user, conversation_id, "assistant")
@@ -882,7 +987,7 @@ class ChatService:
             assistant = ChatService._staff_member(user, "assistant")
         except ChatError:
             return False
-        return bool(assistant.assistant_type == "health_manager" and ChatService._is_member(conversation.id, "assistant", assistant.id))
+        return bool(ChatService._is_member(conversation.id, "assistant", assistant.id))
 
     @staticmethod
     def _normalize_id_list(values) -> list[int]:

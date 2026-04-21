@@ -573,3 +573,30 @@ export function getMiniappUserList(params: AdminMiniappUserListParams = {}) {
 export function getMiniappUser(id: number) {
   return request<AdminMiniappUser>(`/users/${id}`);
 }
+
+export type AgreementType = "user_agreement" | "privacy_policy";
+
+export type AgreementItem = {
+  id: number;
+  agreement_type: AgreementType;
+  title: string;
+  content_markdown: string;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type AgreementPayload = {
+  title: string;
+  content_markdown: string;
+};
+
+export function getAgreement(type: AgreementType) {
+  return request<AgreementItem>(`/agreements/${type}`);
+}
+
+export function updateAgreement(type: AgreementType, data: AgreementPayload) {
+  return request<AgreementItem>(`/agreements/${type}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}

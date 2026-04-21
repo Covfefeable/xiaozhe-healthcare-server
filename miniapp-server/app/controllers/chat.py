@@ -148,3 +148,46 @@ def mark_read(conversation_id: int):
     except (AuthError, ChatError) as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data=None)
+
+
+def rename_group(conversation_id: int):
+    try:
+        user = _current_user()
+        data = request.get_json(silent=True) or {}
+        conversation = ChatService.rename_group(
+            user,
+            conversation_id,
+            data.get("title") or "",
+            data.get("role") or request.args.get("role") or "user",
+        )
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=conversation, message="保存成功")
+
+
+def leave_group(conversation_id: int):
+    try:
+        user = _current_user()
+        data = request.get_json(silent=True) or {}
+        ChatService.leave_group(
+            user,
+            conversation_id,
+            data.get("role") or request.args.get("role") or "user",
+        )
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=None, message="已退出群聊")
+
+
+def dissolve_group(conversation_id: int):
+    try:
+        user = _current_user()
+        data = request.get_json(silent=True) or {}
+        ChatService.dissolve_group(
+            user,
+            conversation_id,
+            data.get("role") or request.args.get("role") or "user",
+        )
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=None, message="群聊已解散")
