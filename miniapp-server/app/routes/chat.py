@@ -38,9 +38,24 @@ def list_messages(conversation_id: int):
     return chat.list_messages(conversation_id)
 
 
+@api_bp.get("/chat/conversations/<int:conversation_id>/members")
+def list_members(conversation_id: int):
+    return chat.list_members(conversation_id)
+
+
 @api_bp.post("/chat/conversations/<int:conversation_id>/messages")
 def send_message(conversation_id: int):
     return chat.send_message(conversation_id)
+
+
+@api_bp.post("/chat/conversations/<int:conversation_id>/invite-doctors")
+def invite_doctors(conversation_id: int):
+    return chat.invite_doctors(conversation_id)
+
+
+@api_bp.post("/chat/conversations/<int:conversation_id>/invite-assistants")
+def invite_assistants(conversation_id: int):
+    return chat.invite_assistants(conversation_id)
 
 
 @api_bp.post("/chat/conversations/<int:conversation_id>/read")

@@ -79,6 +79,15 @@ def list_messages(conversation_id: int):
     return success_response(data={"items": items})
 
 
+def list_members(conversation_id: int):
+    try:
+        user = _current_user()
+        items = ChatService.list_members(user, conversation_id, request.args.get("role") or "user")
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data={"items": items})
+
+
 def send_message(conversation_id: int):
     try:
         user = _current_user()
@@ -92,6 +101,26 @@ def send_message(conversation_id: int):
     except (AuthError, ChatError) as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data=message, message="发送成功", code=200)
+
+
+def invite_doctors(conversation_id: int):
+    try:
+        user = _current_user()
+        data = request.get_json(silent=True) or {}
+        conversation = ChatService.invite_doctors(user, conversation_id, data.get("doctor_ids"))
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=conversation, message="邀请成功")
+
+
+def invite_assistants(conversation_id: int):
+    try:
+        user = _current_user()
+        data = request.get_json(silent=True) or {}
+        conversation = ChatService.invite_assistants(user, conversation_id, data.get("assistant_ids"))
+    except (AuthError, ChatError) as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=conversation, message="邀请成功")
 
 
 def mark_read(conversation_id: int):

@@ -24,6 +24,10 @@ class ChatError(Exception):
 
 
 MESSAGE_TYPES = {"text", "image", "video"}
+ASSISTANT_TYPE_LABELS = {
+    "health_manager": "健康管家",
+    "medical_assistant": "医疗助理",
+}
 
 
 class ChatService:
@@ -55,20 +59,8 @@ class ChatService:
             )
             db.session.add(conversation)
             db.session.flush()
-            db.session.add_all(
-                [
-                    ChatConversationMember(
-                        conversation_id=conversation.id,
-                        member_type="user",
-                        member_id=user.id,
-                    ),
-                    ChatConversationMember(
-                        conversation_id=conversation.id,
-                        member_type="doctor",
-                        member_id=doctor.id,
-                    ),
-                ]
-            )
+            ChatService._ensure_conversation_member(conversation.id, "user", user.id)
+            ChatService._ensure_conversation_member(conversation.id, "doctor", doctor.id)
             db.session.commit()
         return ChatService.serialize_conversation(conversation, user)
 
@@ -103,20 +95,8 @@ class ChatService:
         )
         db.session.add(conversation)
         db.session.flush()
-        db.session.add_all(
-            [
-                ChatConversationMember(
-                    conversation_id=conversation.id,
-                    member_type="user",
-                    member_id=user.id,
-                ),
-                ChatConversationMember(
-                    conversation_id=conversation.id,
-                    member_type="customer_service",
-                    member_id=customer_service.id,
-                ),
-            ]
-        )
+        ChatService._ensure_conversation_member(conversation.id, "user", user.id)
+        ChatService._ensure_conversation_member(conversation.id, "customer_service", customer_service.id)
         db.session.commit()
         return ChatService.serialize_conversation(conversation, user)
 
@@ -152,20 +132,8 @@ class ChatService:
         )
         db.session.add(conversation)
         db.session.flush()
-        db.session.add_all(
-            [
-                ChatConversationMember(
-                    conversation_id=conversation.id,
-                    member_type="user",
-                    member_id=user.id,
-                ),
-                ChatConversationMember(
-                    conversation_id=conversation.id,
-                    member_type="assistant",
-                    member_id=assistant.id,
-                ),
-            ]
-        )
+        ChatService._ensure_conversation_member(conversation.id, "user", user.id)
+        ChatService._ensure_conversation_member(conversation.id, "assistant", assistant.id)
         db.session.commit()
         return ChatService.serialize_conversation(conversation, user)
 
@@ -201,22 +169,88 @@ class ChatService:
         )
         db.session.add(conversation)
         db.session.flush()
-        db.session.add_all(
-            [
-                ChatConversationMember(
-                    conversation_id=conversation.id,
-                    member_type="user",
-                    member_id=target_user.id,
-                ),
-                ChatConversationMember(
-                    conversation_id=conversation.id,
-                    member_type="assistant",
-                    member_id=assistant.id,
-                ),
-            ]
-        )
+        ChatService._ensure_conversation_member(conversation.id, "user", target_user.id)
+        ChatService._ensure_conversation_member(conversation.id, "assistant", assistant.id)
         db.session.commit()
         return ChatService.serialize_conversation(conversation, user, "assistant")
+
+    @staticmethod
+    def invite_doctors(user: MiniappUser, conversation_id: int, doctor_ids) -> dict:
+        conversation, assistant = ChatService._conversation_for_health_manager(user, conversation_id)
+        ids = ChatService._normalize_id_list(doctor_ids)
+        if not ids:
+            raise ChatError("请选择医生")
+        existing_ids = ChatService._existing_member_ids(conversation.id, "doctor")
+        ids = [item_id for item_id in ids if item_id not in existing_ids]
+        if not ids:
+            raise ChatError("选择的医生已在群聊中")
+        doctors = Doctor.query.join(Doctor.department).filter(
+            Doctor.id.in_(ids),
+            Doctor.deleted_at.is_(None),
+        ).all()
+        available_doctors = [
+            doctor for doctor in doctors if doctor.department and doctor.department.deleted_at is None
+        ]
+        if not available_doctors:
+            raise ChatError("医生不存在", 404)
+        ChatService._upgrade_to_group(conversation)
+        joined_members = []
+        for doctor in available_doctors:
+            member = ChatService._ensure_conversation_member(
+                conversation.id,
+                "doctor",
+                doctor.id,
+                invited_by_type="assistant",
+                invited_by_id=assistant.id,
+            )
+            joined_members.append(member)
+        ChatService._add_join_messages(conversation, joined_members)
+        db.session.commit()
+        return ChatService.serialize_conversation(conversation, user, "assistant")
+
+    @staticmethod
+    def invite_assistants(user: MiniappUser, conversation_id: int, assistant_ids) -> dict:
+        conversation, health_manager = ChatService._conversation_for_health_manager(user, conversation_id)
+        ids = ChatService._normalize_id_list(assistant_ids)
+        if not ids:
+            raise ChatError("请选择医疗助理")
+        existing_ids = ChatService._existing_member_ids(conversation.id, "assistant")
+        ids = [item_id for item_id in ids if item_id not in existing_ids]
+        if not ids:
+            raise ChatError("选择的医疗助理已在群聊中")
+        assistants = Assistant.query.filter(
+            Assistant.id.in_(ids),
+            Assistant.status == "active",
+            Assistant.assistant_type == "medical_assistant",
+            Assistant.deleted_at.is_(None),
+        ).all()
+        if not assistants:
+            raise ChatError("医疗助理不存在", 404)
+        ChatService._upgrade_to_group(conversation)
+        joined_members = []
+        for assistant in assistants:
+            if assistant.id == health_manager.id:
+                continue
+            member = ChatService._ensure_conversation_member(
+                conversation.id,
+                "assistant",
+                assistant.id,
+                invited_by_type="assistant",
+                invited_by_id=health_manager.id,
+            )
+            joined_members.append(member)
+        ChatService._add_join_messages(conversation, joined_members)
+        db.session.commit()
+        return ChatService.serialize_conversation(conversation, user, "assistant")
+
+    @staticmethod
+    def list_members(user: MiniappUser, conversation_id: int, role: str = "user") -> list[dict]:
+        conversation = ChatService.get_conversation(user, conversation_id, role)
+        members = ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation.id,
+            ChatConversationMember.deleted_at.is_(None),
+        ).order_by(ChatConversationMember.created_at.asc()).all()
+        return [ChatService.serialize_member(member) for member in members]
 
     @staticmethod
     def list_conversations(user: MiniappUser, role: str = "user") -> list[dict]:
@@ -259,6 +293,7 @@ class ChatService:
     @staticmethod
     def list_messages(user: MiniappUser, conversation_id: int, args, role: str = "user") -> list[dict]:
         conversation = ChatService.get_conversation(user, conversation_id, role)
+        member_type, member_id = ChatService._viewer_member(user, role)
         limit = ChatService._positive_int(args.get("limit"), default=20, maximum=50)
         before_id = args.get("before_id")
         query = ChatMessage.query.filter(
@@ -271,7 +306,10 @@ class ChatService:
             except (TypeError, ValueError):
                 raise ChatError("消息游标不正确") from None
         messages = query.order_by(ChatMessage.id.desc()).limit(limit).all()
-        return [ChatService.serialize_message(item) for item in reversed(messages)]
+        return [
+            ChatService.serialize_message(item, viewer_type=member_type, viewer_id=member_id)
+            for item in reversed(messages)
+        ]
 
     @staticmethod
     def send_message(user: MiniappUser, conversation_id: int, data: dict, role: str = "user") -> dict:
@@ -290,10 +328,14 @@ class ChatService:
             raise ChatError("请上传附件")
 
         now = datetime.utcnow()
+        sender_profile = ChatService._member_profile(member_type, member_id)
         message = ChatMessage(
             conversation_id=conversation.id,
             sender_type=member_type,
             sender_id=member_id,
+            sender_name=sender_profile["name"],
+            sender_avatar=sender_profile["avatar"],
+            sender_role_label=sender_profile["role_label"],
             message_type=message_type,
             content=content,
             sent_at=now,
@@ -321,17 +363,16 @@ class ChatService:
         conversation.last_message_type = message_type
         conversation.last_message_preview = ChatService._message_preview(message_type, content)
         conversation.last_message_at = now
-        target_member_type, target_member_id = ChatService._target_member(conversation, member_type)
-        target_member = ChatConversationMember.query.filter(
+        target_members = ChatConversationMember.query.filter(
             ChatConversationMember.conversation_id == conversation.id,
-            ChatConversationMember.member_type == target_member_type,
-            ChatConversationMember.member_id == target_member_id,
             ChatConversationMember.deleted_at.is_(None),
-        ).first()
-        if target_member:
+        ).all()
+        for target_member in target_members:
+            if target_member.member_type == member_type and target_member.member_id == member_id:
+                continue
             target_member.unread_count += 1
         db.session.commit()
-        return ChatService.serialize_message(message)
+        return ChatService.serialize_message(message, viewer_type=member_type, viewer_id=member_id)
 
     @staticmethod
     def mark_read(user: MiniappUser, conversation_id: int, role: str = "user") -> None:
@@ -359,6 +400,7 @@ class ChatService:
             ChatConversationMember.deleted_at.is_(None),
         ).first()
         doctor = conversation.doctor
+        can_invite = ChatService._can_invite_members(user, role, conversation)
         return {
             "id": str(conversation.id),
             "conversation_type": conversation.conversation_type,
@@ -377,16 +419,30 @@ class ChatService:
             "last_message_type": conversation.last_message_type or "",
             "last_message_at": beijing_iso(conversation.last_message_at),
             "unread_count": member.unread_count if member else 0,
+            "can_invite_members": can_invite,
         }
 
     @staticmethod
-    def serialize_message(message: ChatMessage) -> dict:
+    def serialize_message(message: ChatMessage, viewer_type: str | None = None, viewer_id: int | None = None) -> dict:
         role = message.sender_type if message.sender_type in {"user", "doctor", "assistant", "customer_service"} else "system"
+        sender_profile = (
+            {
+                "name": message.sender_name,
+                "avatar": message.sender_avatar,
+                "role_label": message.sender_role_label,
+            }
+            if message.sender_name or message.sender_avatar or message.sender_role_label
+            else ChatService._member_profile(message.sender_type, message.sender_id)
+        )
         return {
             "id": str(message.id),
             "conversation_id": str(message.conversation_id),
             "sender_type": message.sender_type,
             "sender_id": str(message.sender_id),
+            "sender_name": sender_profile["name"],
+            "sender_avatar": sender_profile["avatar"],
+            "sender_role_label": sender_profile["role_label"],
+            "is_mine": bool(viewer_type == message.sender_type and viewer_id == message.sender_id),
             "role": role,
             "message_type": message.message_type,
             "content": message.content or "",
@@ -410,6 +466,27 @@ class ChatService:
         }
 
     @staticmethod
+    def serialize_member(member: ChatConversationMember) -> dict:
+        profile = (
+            {
+                "name": member.display_name,
+                "avatar": member.avatar_url,
+                "role_label": member.role_label,
+            }
+            if member.display_name or member.avatar_url or member.role_label
+            else ChatService._member_profile(member.member_type, member.member_id)
+        )
+        return {
+            "id": str(member.id),
+            "conversation_id": str(member.conversation_id),
+            "member_type": member.member_type,
+            "member_id": str(member.member_id),
+            "display_name": profile["name"],
+            "avatar_url": profile["avatar"],
+            "role_label": profile["role_label"],
+        }
+
+    @staticmethod
     def _message_preview(message_type: str, content: str) -> str:
         if message_type == "image":
             return "[图片]"
@@ -418,7 +495,49 @@ class ChatService:
         return content.strip()[:255]
 
     @staticmethod
+    def _add_join_messages(conversation: ChatConversation, joined_members: list[ChatConversationMember]) -> None:
+        for joined_member in joined_members:
+            name = joined_member.display_name or "成员"
+            content = f"{name}已加入群聊，现在可以开始聊天了"
+            now = datetime.utcnow()
+            message = ChatMessage(
+                conversation_id=conversation.id,
+                sender_type="system",
+                sender_id=0,
+                sender_name="系统",
+                sender_avatar="",
+                sender_role_label="系统",
+                message_type="text",
+                content=content,
+                sent_at=now,
+            )
+            db.session.add(message)
+            db.session.flush()
+            conversation.last_message_id = message.id
+            conversation.last_message_type = "text"
+            conversation.last_message_preview = content
+            conversation.last_message_at = now
+            members = ChatConversationMember.query.filter(
+                ChatConversationMember.conversation_id == conversation.id,
+                ChatConversationMember.deleted_at.is_(None),
+            ).all()
+            for member in members:
+                if member.member_type == joined_member.member_type and member.member_id == joined_member.member_id:
+                    continue
+                member.unread_count += 1
+
+    @staticmethod
     def _target_profile(conversation: ChatConversation, role: str = "user") -> dict:
+        if conversation.conversation_type == "group":
+            user = conversation.owner_user
+            name = conversation.title or ((user.real_name or user.nickname or user.phone or "用户") if user else "健康咨询")
+            return {
+                "id": conversation.id,
+                "name": name,
+                "title": "群聊",
+                "label": "健康咨询",
+                "avatar": user.avatar_url if user else "",
+            }
         if role in {"doctor", "assistant"}:
             user = conversation.owner_user
             return {
@@ -496,6 +615,140 @@ class ChatService:
                 return assistant
             raise ChatError("当前账号不是助理身份", 403)
         raise ChatError("角色不支持", 400)
+
+    @staticmethod
+    def _conversation_for_health_manager(user: MiniappUser, conversation_id: int):
+        assistant = ChatService._staff_member(user, "assistant")
+        if assistant.assistant_type != "health_manager":
+            raise ChatError("仅健康管家可以邀请成员", 403)
+        conversation = ChatService.get_conversation(user, conversation_id, "assistant")
+        member = ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation.id,
+            ChatConversationMember.member_type == "assistant",
+            ChatConversationMember.member_id == assistant.id,
+            ChatConversationMember.deleted_at.is_(None),
+        ).first()
+        if not member:
+            raise ChatError("无权操作该会话", 403)
+        return conversation, assistant
+
+    @staticmethod
+    def _upgrade_to_group(conversation: ChatConversation) -> None:
+        if conversation.conversation_type == "group":
+            return
+        conversation.conversation_type = "group"
+        conversation.target_type = "assistant"
+        owner = conversation.owner_user
+        owner_name = (owner.real_name or owner.nickname or owner.phone or "用户") if owner else "用户"
+        conversation.title = f"{owner_name}的健康咨询"
+
+    @staticmethod
+    def _ensure_conversation_member(
+        conversation_id: int,
+        member_type: str,
+        member_id: int,
+        invited_by_type: str = "",
+        invited_by_id: int | None = None,
+    ) -> ChatConversationMember:
+        member = ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation_id,
+            ChatConversationMember.member_type == member_type,
+            ChatConversationMember.member_id == member_id,
+            ChatConversationMember.deleted_at.is_(None),
+        ).first()
+        profile = ChatService._member_profile(member_type, member_id)
+        if member:
+            member.display_name = member.display_name or profile["name"]
+            member.avatar_url = member.avatar_url or profile["avatar"]
+            member.role_label = member.role_label or profile["role_label"]
+            return member
+        member = ChatConversationMember(
+            conversation_id=conversation_id,
+            member_type=member_type,
+            member_id=member_id,
+            display_name=profile["name"],
+            avatar_url=profile["avatar"],
+            role_label=profile["role_label"],
+            invited_by_type=invited_by_type,
+            invited_by_id=invited_by_id,
+        )
+        db.session.add(member)
+        return member
+
+    @staticmethod
+    def _member_profile(member_type: str, member_id: int | None) -> dict:
+        fallback = {"id": member_id, "name": "", "avatar": "", "role_label": ""}
+        if member_id is None:
+            return fallback
+        if member_type == "user":
+            user = MiniappUser.query.filter(MiniappUser.id == member_id).first()
+            return {
+                "id": member_id,
+                "name": (user.real_name or user.nickname or user.phone or "用户") if user else "用户",
+                "avatar": user.avatar_url if user else "",
+                "role_label": "就诊者",
+            }
+        if member_type == "assistant":
+            assistant = Assistant.query.filter(Assistant.id == member_id).first()
+            assistant_type = assistant.assistant_type if assistant else "health_manager"
+            return {
+                "id": member_id,
+                "name": assistant.name if assistant else "助理",
+                "avatar": assistant.avatar_url if assistant else "",
+                "role_label": ASSISTANT_TYPE_LABELS.get(assistant_type, "健康管家"),
+            }
+        if member_type == "doctor":
+            doctor = Doctor.query.filter(Doctor.id == member_id).first()
+            return {
+                "id": member_id,
+                "name": doctor.name if doctor else "医生",
+                "avatar": doctor.avatar_url if doctor else "",
+                "role_label": doctor.title if doctor and doctor.title else "医生",
+            }
+        if member_type == "customer_service":
+            customer_service = CustomerService.query.filter(CustomerService.id == member_id).first()
+            return {
+                "id": member_id,
+                "name": customer_service.name if customer_service else "客服",
+                "avatar": customer_service.avatar_url if customer_service else "",
+                "role_label": "客服",
+            }
+        return fallback
+
+    @staticmethod
+    def _can_invite_members(user: MiniappUser, role: str, conversation: ChatConversation) -> bool:
+        if role != "assistant":
+            return False
+        try:
+            assistant = ChatService._staff_member(user, "assistant")
+        except ChatError:
+            return False
+        return bool(assistant.assistant_type == "health_manager" and ChatService._is_member(conversation.id, "assistant", assistant.id))
+
+    @staticmethod
+    def _normalize_id_list(values) -> list[int]:
+        if values is None:
+            return []
+        if not isinstance(values, list):
+            values = [values]
+        ids: list[int] = []
+        for value in values:
+            try:
+                number = int(value)
+            except (TypeError, ValueError):
+                continue
+            if number > 0 and number not in ids:
+                ids.append(number)
+        return ids
+
+    @staticmethod
+    def _existing_member_ids(conversation_id: int, member_type: str) -> set[int]:
+        members = ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation_id,
+            ChatConversationMember.member_type == member_type,
+            ChatConversationMember.deleted_at.is_(None),
+        ).all()
+        return {member.member_id for member in members}
 
     @staticmethod
     def _is_member(conversation_id: int, member_type: str, member_id: int) -> bool:

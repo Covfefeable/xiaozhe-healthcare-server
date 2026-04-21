@@ -14,3 +14,14 @@ def get_current_assistant():
     except AssistantError as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data=assistant)
+
+
+def list_assistants():
+    try:
+        AuthService.get_current_user(request.headers.get("Authorization"))
+        items = AssistantService.list_assistants(request.args)
+    except AuthError as exc:
+        return error_response(message=exc.message, code=exc.code)
+    except AssistantError as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data={"items": items})

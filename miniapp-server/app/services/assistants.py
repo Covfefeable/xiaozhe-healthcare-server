@@ -1,4 +1,5 @@
 from app.models import Assistant, MiniappUser
+from app.extensions import db
 
 
 ASSISTANT_TYPE_LABELS = {
@@ -29,6 +30,29 @@ class AssistantService:
             "remark": assistant.remark or "",
             "status": assistant.status,
         }
+
+    @staticmethod
+    def list_assistants(args) -> list[dict]:
+        keyword = (args.get("keyword") or "").strip()
+        assistant_type = (args.get("assistant_type") or "").strip()
+        query = Assistant.query.filter(
+            Assistant.status == "active",
+            Assistant.deleted_at.is_(None),
+        )
+        if assistant_type:
+            if assistant_type not in ASSISTANT_TYPE_LABELS:
+                raise AssistantError("助理类型参数不正确")
+            query = query.filter(Assistant.assistant_type == assistant_type)
+        if keyword:
+            query = query.filter(
+                db.or_(
+                    Assistant.name.ilike(f"%{keyword}%"),
+                    Assistant.phone.ilike(f"%{keyword}%"),
+                    Assistant.remark.ilike(f"%{keyword}%"),
+                )
+            )
+        items = query.order_by(Assistant.created_at.desc()).all()
+        return [AssistantService.serialize(item) for item in items]
 
     @staticmethod
     def get_current_assistant(user: MiniappUser) -> dict:
