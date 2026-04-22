@@ -1,5 +1,6 @@
 from app.extensions import db
 from app.models import Banner
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -15,7 +16,8 @@ class BannerService:
     def serialize(banner: Banner) -> dict:
         return {
             "id": banner.id,
-            "image_url": banner.image_url or "",
+            "image_object_key": banner.image_object_key or "",
+            "image_url": StorageService.sign_url(banner.image_object_key),
             "title": banner.title,
             "description": banner.description or "",
             "created_at": beijing_iso(banner.created_at),
@@ -95,7 +97,7 @@ class BannerService:
             raise BannerError("Banner 描述不能超过 255 个字符")
 
         return {
-            "image_url": data.get("image_url") or "",
+            "image_object_key": data.get("image_object_key") or "",
             "title": title,
             "description": description,
         }

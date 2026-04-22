@@ -1,5 +1,6 @@
 from app.extensions import db
 from app.models import Department, Doctor
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -17,7 +18,8 @@ class DoctorService:
             "id": doctor.id,
             "department_id": doctor.department_id,
             "department_name": doctor.department.name if doctor.department else "",
-            "avatar_url": doctor.avatar_url or "",
+            "avatar_object_key": doctor.avatar_object_key or "",
+            "avatar_url": StorageService.sign_url(doctor.avatar_object_key),
             "name": doctor.name,
             "title": doctor.title or "",
             "hospital": doctor.hospital or "",
@@ -141,7 +143,7 @@ class DoctorService:
             raise DoctorError("列表简介不能超过 120 个字符")
         return {
             "department_id": department_id,
-            "avatar_url": data.get("avatar_url") or "",
+            "avatar_object_key": data.get("avatar_object_key") or "",
             "name": name,
             "phone": phone,
             "title": title,

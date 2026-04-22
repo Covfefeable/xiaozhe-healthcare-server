@@ -13,6 +13,7 @@ from app.models import (
     Doctor,
     MiniappUser,
 )
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -470,8 +471,8 @@ class ChatService:
                 ChatMessageAttachment(
                     message_id=message.id,
                     file_type=attachment.get("file_type") or message_type,
-                    file_url=attachment.get("file_url") or "",
-                    thumbnail_url=attachment.get("thumbnail_url") or "",
+                    file_object_key=attachment.get("file_object_key") or attachment.get("file_url") or "",
+                    thumbnail_object_key=attachment.get("thumbnail_object_key") or attachment.get("thumbnail_url") or "",
                     file_name=attachment.get("file_name") or "",
                     mime_type=attachment.get("mime_type") or "",
                     file_size=attachment.get("file_size"),
@@ -597,7 +598,7 @@ class ChatService:
             "doctor_name": doctor.name if doctor else target["name"],
             "doctor_title": doctor.title if doctor else target["title"],
             "department_name": doctor.department.name if doctor and doctor.department else target["label"],
-            "doctor_avatar": doctor.avatar_url if doctor else target["avatar"],
+            "doctor_avatar": StorageService.sign_url(doctor.avatar_object_key) if doctor else target["avatar"],
             "last_message_preview": conversation.last_message_preview or "",
             "last_message_type": conversation.last_message_type or "",
             "last_message_at": beijing_iso(conversation.last_message_at),
@@ -635,8 +636,10 @@ class ChatService:
                 {
                     "id": str(item.id),
                     "file_type": item.file_type,
-                    "file_url": item.file_url,
-                    "thumbnail_url": item.thumbnail_url,
+                    "file_object_key": item.file_object_key,
+                    "file_url": StorageService.sign_url(item.file_object_key),
+                    "thumbnail_object_key": item.thumbnail_object_key,
+                    "thumbnail_url": StorageService.sign_url(item.thumbnail_object_key),
                     "file_name": item.file_name,
                     "mime_type": item.mime_type,
                     "file_size": item.file_size,
@@ -653,10 +656,10 @@ class ChatService:
         profile = (
             {
                 "name": member.display_name,
-                "avatar": member.avatar_url,
+                "avatar": StorageService.sign_url(member.avatar_object_key),
                 "role_label": member.role_label,
             }
-            if member.display_name or member.avatar_url or member.role_label
+            if member.display_name or member.avatar_object_key or member.role_label
             else ChatService._member_profile(member.member_type, member.member_id)
         )
         return {
@@ -675,7 +678,8 @@ class ChatService:
             "id": str(user.id),
             "name": user.real_name or user.nickname or user.phone or "用户",
             "phone": user.phone or "",
-            "avatar_url": user.avatar_url or "",
+            "avatar_object_key": user.avatar_object_key or "",
+            "avatar_url": StorageService.sign_url(user.avatar_object_key),
             "membership_status": user.membership_status,
         }
 
@@ -766,7 +770,7 @@ class ChatService:
                 "name": name,
                 "title": "群聊",
                 "label": "健康咨询",
-                "avatar": user.avatar_url if user else "",
+                "avatar": StorageService.sign_url(user.avatar_object_key) if user else "",
             }
         if role in {"doctor", "assistant"} and viewer_type and viewer_id:
             other_member = (
@@ -799,7 +803,7 @@ class ChatService:
                 "name": (user.real_name or user.nickname or user.phone or "患者") if user else conversation.title,
                 "title": "患者",
                 "label": user.phone if user else "患者",
-                "avatar": user.avatar_url if user else "",
+                "avatar": StorageService.sign_url(user.avatar_object_key) if user else "",
             }
         if conversation.target_type == "customer_service":
             item = conversation.customer_service
@@ -808,7 +812,7 @@ class ChatService:
                 "name": item.name if item else conversation.title,
                 "title": "客服",
                 "label": "客服",
-                "avatar": item.avatar_url if item else "",
+                "avatar": StorageService.sign_url(item.avatar_object_key) if item else "",
             }
         if conversation.target_type == "assistant":
             item = conversation.assistant
@@ -817,7 +821,7 @@ class ChatService:
                 "name": item.name if item else conversation.title,
                 "title": "健康管家",
                 "label": "健康管家",
-                "avatar": item.avatar_url if item else "",
+                "avatar": StorageService.sign_url(item.avatar_object_key) if item else "",
             }
         doctor = conversation.doctor
         return {
@@ -825,7 +829,7 @@ class ChatService:
             "name": doctor.name if doctor else conversation.title,
             "title": doctor.title if doctor else "",
             "label": doctor.department.name if doctor and doctor.department else "",
-            "avatar": doctor.avatar_url if doctor else "",
+            "avatar": StorageService.sign_url(doctor.avatar_object_key) if doctor else "",
         }
 
     @staticmethod
@@ -923,7 +927,7 @@ class ChatService:
         profile = ChatService._member_profile(member_type, member_id)
         if member:
             member.display_name = member.display_name or profile["name"]
-            member.avatar_url = member.avatar_url or profile["avatar"]
+            member.avatar_object_key = member.avatar_object_key or profile["avatar_object_key"]
             member.role_label = member.role_label or profile["role_label"]
             return member
         member = ChatConversationMember(
@@ -931,7 +935,7 @@ class ChatService:
             member_type=member_type,
             member_id=member_id,
             display_name=profile["name"],
-            avatar_url=profile["avatar"],
+            avatar_object_key=profile["avatar_object_key"],
             role_label=profile["role_label"],
             invited_by_type=invited_by_type,
             invited_by_id=invited_by_id,
@@ -941,40 +945,48 @@ class ChatService:
 
     @staticmethod
     def _member_profile(member_type: str, member_id: int | None) -> dict:
-        fallback = {"id": member_id, "name": "", "avatar": "", "role_label": ""}
+        fallback = {"id": member_id, "name": "", "avatar_object_key": "", "avatar": "", "role_label": ""}
         if member_id is None:
             return fallback
         if member_type == "user":
             user = MiniappUser.query.filter(MiniappUser.id == member_id).first()
+            avatar_object_key = user.avatar_object_key if user else ""
             return {
                 "id": member_id,
                 "name": (user.real_name or user.nickname or user.phone or "用户") if user else "用户",
-                "avatar": user.avatar_url if user else "",
+                "avatar_object_key": avatar_object_key,
+                "avatar": StorageService.sign_url(avatar_object_key),
                 "role_label": "就诊者",
             }
         if member_type == "assistant":
             assistant = Assistant.query.filter(Assistant.id == member_id).first()
             assistant_type = assistant.assistant_type if assistant else "health_manager"
+            avatar_object_key = assistant.avatar_object_key if assistant else ""
             return {
                 "id": member_id,
                 "name": assistant.name if assistant else "助理",
-                "avatar": assistant.avatar_url if assistant else "",
+                "avatar_object_key": avatar_object_key,
+                "avatar": StorageService.sign_url(avatar_object_key),
                 "role_label": ASSISTANT_TYPE_LABELS.get(assistant_type, "健康管家"),
             }
         if member_type == "doctor":
             doctor = Doctor.query.filter(Doctor.id == member_id).first()
+            avatar_object_key = doctor.avatar_object_key if doctor else ""
             return {
                 "id": member_id,
                 "name": doctor.name if doctor else "医生",
-                "avatar": doctor.avatar_url if doctor else "",
+                "avatar_object_key": avatar_object_key,
+                "avatar": StorageService.sign_url(avatar_object_key),
                 "role_label": doctor.title if doctor and doctor.title else "医生",
             }
         if member_type == "customer_service":
             customer_service = CustomerService.query.filter(CustomerService.id == member_id).first()
+            avatar_object_key = customer_service.avatar_object_key if customer_service else ""
             return {
                 "id": member_id,
                 "name": customer_service.name if customer_service else "客服",
-                "avatar": customer_service.avatar_url if customer_service else "",
+                "avatar_object_key": avatar_object_key,
+                "avatar": StorageService.sign_url(avatar_object_key),
                 "role_label": "客服",
             }
         return fallback

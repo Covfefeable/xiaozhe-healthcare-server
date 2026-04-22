@@ -107,6 +107,7 @@ export type Product = {
   price_cents: number;
   validity_days: 0 | 30 | 90 | 180 | 365;
   product_type: ProductType;
+  image_object_key: string;
   image_url: string;
   detail_markdown: string;
   status: ProductStatus;
@@ -130,7 +131,7 @@ export type ProductPayload = {
   price_cents: number;
   validity_days: number;
   product_type: ProductType;
-  image_url?: string;
+  image_object_key?: string;
   detail_markdown?: string;
   sort_order?: number;
 };
@@ -177,6 +178,7 @@ export function unpublishProduct(id: number) {
 
 export type NewsItem = {
   id: number;
+  cover_image_object_key: string;
   cover_image_url: string;
   title: string;
   published_at: string | null;
@@ -192,7 +194,7 @@ export type NewsListParams = {
 };
 
 export type NewsPayload = {
-  cover_image_url?: string;
+  cover_image_object_key?: string;
   title: string;
   published_at: string;
   content_markdown?: string;
@@ -232,6 +234,7 @@ export function deleteNews(id: number) {
 
 export type BannerItem = {
   id: number;
+  image_object_key: string;
   image_url: string;
   title: string;
   description: string;
@@ -246,7 +249,7 @@ export type BannerListParams = {
 };
 
 export type BannerPayload = {
-  image_url?: string;
+  image_object_key?: string;
   title: string;
   description?: string;
 };
@@ -340,6 +343,7 @@ export type DoctorItem = {
   id: number;
   department_id: number;
   department_name: string;
+  avatar_object_key: string;
   avatar_url: string;
   name: string;
   phone: string;
@@ -355,7 +359,7 @@ export type DoctorItem = {
 
 export type DoctorPayload = {
   department_id: number;
-  avatar_url?: string;
+  avatar_object_key?: string;
   name: string;
   phone: string;
   title?: string;
@@ -410,6 +414,7 @@ export type AssistantType = "health_manager" | "medical_assistant";
 
 export type StaffItem = {
   id: number;
+  avatar_object_key: string;
   avatar_url: string;
   name: string;
   phone: string;
@@ -421,7 +426,7 @@ export type StaffItem = {
 };
 
 export type StaffPayload = {
-  avatar_url?: string;
+  avatar_object_key?: string;
   name: string;
   phone: string;
   status: StaffStatus;

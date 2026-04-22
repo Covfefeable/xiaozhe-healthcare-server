@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from app.extensions import db
 from app.models import Product, ProductStatus, ProductType
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -26,7 +27,8 @@ class ProductService:
             "price": f"{Decimal(product.price_cents) / Decimal(100):.2f}",
             "validity_days": product.validity_days,
             "product_type": product.product_type,
-            "image_url": product.image_url or "",
+            "image_object_key": product.image_object_key or "",
+            "image_url": StorageService.sign_url(product.image_object_key),
             "detail_markdown": product.detail_markdown or "",
             "status": product.status,
             "sort_order": product.sort_order,
@@ -146,7 +148,7 @@ class ProductService:
             "price_cents": ProductService._parse_price_cents(data.get("price_cents")),
             "validity_days": ProductService._parse_validity_days(data.get("validity_days"), product_type),
             "product_type": product_type,
-            "image_url": data.get("image_url") or "",
+            "image_object_key": data.get("image_object_key") or "",
             "detail_markdown": data.get("detail_markdown") or "",
             "sort_order": ProductService._int_or_default(data.get("sort_order"), 0),
         }

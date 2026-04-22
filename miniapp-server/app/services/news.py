@@ -1,4 +1,5 @@
 from app.models import News
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -17,7 +18,8 @@ class NewsService:
             "title": news.title,
             "date": beijing_iso(news.published_at),
             "published_at": beijing_iso(news.published_at),
-            "image": news.cover_image_url or "",
+            "cover_image_object_key": news.cover_image_object_key or "",
+            "image": StorageService.sign_url(news.cover_image_object_key),
         }
         if include_content:
             data["content"] = news.content_markdown or ""

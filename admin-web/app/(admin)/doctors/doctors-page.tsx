@@ -31,6 +31,7 @@ import {
   type DoctorItem,
   type DoctorPayload,
 } from "@/lib/api";
+import { uploadFile } from "@/lib/upload";
 
 type FilterValues = {
   keyword?: string;
@@ -39,7 +40,7 @@ type FilterValues = {
 
 type DoctorFormValues = {
   department_id: number;
-  avatar_url?: string;
+  avatar_object_key?: string;
   name: string;
   phone: string;
   title?: string;
@@ -49,15 +50,6 @@ type DoctorFormValues = {
   introduction?: string;
   sort_order?: number;
 };
-
-function fileToBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
 
 function parseTags(value?: string) {
   return (value || "")
@@ -69,7 +61,7 @@ function parseTags(value?: string) {
 function toPayload(values: DoctorFormValues): DoctorPayload {
   return {
     department_id: values.department_id,
-    avatar_url: values.avatar_url ?? "",
+    avatar_object_key: values.avatar_object_key ?? "",
     name: values.name.trim(),
     phone: values.phone.trim(),
     title: values.title?.trim() ?? "",
@@ -142,7 +134,7 @@ export function DoctorsPage() {
     setEditingDoctor(null);
     doctorForm.setFieldsValue({
       department_id: departments[0]?.id,
-      avatar_url: "",
+      avatar_object_key: "",
       name: "",
       phone: "",
       title: "",
@@ -160,7 +152,7 @@ export function DoctorsPage() {
     setEditingDoctor(doctor);
     doctorForm.setFieldsValue({
       department_id: doctor.department_id,
-      avatar_url: doctor.avatar_url ?? "",
+      avatar_object_key: doctor.avatar_object_key ?? "",
       name: doctor.name,
       phone: doctor.phone,
       title: doctor.title,
@@ -205,13 +197,13 @@ export function DoctorsPage() {
   };
 
   const handleAvatarUpload = async (file: File) => {
-    const base64 = await fileToBase64(file);
-    doctorForm.setFieldValue("avatar_url", base64);
-    setAvatarUrl(base64);
+    const result = await uploadFile(file, "doctor_avatar");
+    doctorForm.setFieldValue("avatar_object_key", result.object_key);
+    setAvatarUrl(result.url);
   };
 
   const handleRemoveAvatar = () => {
-    doctorForm.setFieldValue("avatar_url", "");
+    doctorForm.setFieldValue("avatar_object_key", "");
     setAvatarUrl("");
   };
 
@@ -398,7 +390,7 @@ export function DoctorsPage() {
               ) : null}
             </Space>
           </Form.Item>
-          <Form.Item hidden name="avatar_url">
+          <Form.Item hidden name="avatar_object_key">
             <Input />
           </Form.Item>
           <Form.Item label="列表简介" name="summary">

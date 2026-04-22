@@ -21,10 +21,11 @@ import {
 import { useEffect, useState } from "react";
 
 import type { AssistantType, StaffItem, StaffListParams, StaffPayload, StaffStatus } from "@/lib/api";
+import { uploadFile } from "@/lib/upload";
 import "./staff.css";
 
 type StaffFormValues = {
-  avatar_url?: string;
+  avatar_object_key?: string;
   name: string;
   phone: string;
   status: StaffStatus;
@@ -44,6 +45,7 @@ type StaffManagementPageProps = {
   updateItem: (id: number, data: StaffPayload) => Promise<StaffItem>;
   deleteItem: (id: number) => Promise<null>;
   staffTypeOptions?: { label: string; value: AssistantType }[];
+  uploadBizType: "assistant_avatar" | "customer_service_avatar";
 };
 
 const statusOptions = [
@@ -51,18 +53,9 @@ const statusOptions = [
   { label: "禁用", value: "inactive" },
 ];
 
-function fileToBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 function toPayload(values: StaffFormValues): StaffPayload {
   const payload: StaffPayload = {
-    avatar_url: values.avatar_url ?? "",
+    avatar_object_key: values.avatar_object_key ?? "",
     name: values.name.trim(),
     phone: values.phone.trim(),
     status: values.status,
@@ -94,6 +87,7 @@ export function StaffManagementPage({
   updateItem,
   deleteItem,
   staffTypeOptions,
+  uploadBizType,
 }: StaffManagementPageProps) {
   const [messageApi, contextHolder] = message.useMessage();
   const [filterForm] = Form.useForm<StaffListParams>();
@@ -138,7 +132,7 @@ export function StaffManagementPage({
   const openCreateModal = () => {
     setEditingItem(null);
     staffForm.setFieldsValue({
-      avatar_url: "",
+      avatar_object_key: "",
       name: "",
       phone: "",
       status: "active",
@@ -152,7 +146,7 @@ export function StaffManagementPage({
   const openEditModal = (item: StaffItem) => {
     setEditingItem(item);
     staffForm.setFieldsValue({
-      avatar_url: item.avatar_url ?? "",
+      avatar_object_key: item.avatar_object_key ?? "",
       name: item.name,
       phone: item.phone,
       status: item.status,
@@ -194,13 +188,13 @@ export function StaffManagementPage({
   };
 
   const handleAvatarUpload = async (file: File) => {
-    const base64 = await fileToBase64(file);
-    staffForm.setFieldValue("avatar_url", base64);
-    setAvatarUrl(base64);
+    const result = await uploadFile(file, uploadBizType);
+    staffForm.setFieldValue("avatar_object_key", result.object_key);
+    setAvatarUrl(result.url);
   };
 
   const handleRemoveAvatar = () => {
-    staffForm.setFieldValue("avatar_url", "");
+    staffForm.setFieldValue("avatar_object_key", "");
     setAvatarUrl("");
   };
 
@@ -405,7 +399,7 @@ export function StaffManagementPage({
               ) : null}
             </Space>
           </Form.Item>
-          <Form.Item hidden name="avatar_url">
+          <Form.Item hidden name="avatar_object_key">
             <Input />
           </Form.Item>
           <Form.Item label="备注" name="remark">

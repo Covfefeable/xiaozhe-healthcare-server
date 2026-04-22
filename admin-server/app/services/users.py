@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from app.extensions import db
 from app.models import MiniappHealthRecord, MiniappUser
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso, beijing_strftime
 
 
@@ -23,7 +24,8 @@ class UserService:
             "id": user.id,
             "openid": user.openid or "",
             "nickname": user.nickname or "",
-            "avatar_url": user.avatar_url or "",
+            "avatar_object_key": user.avatar_object_key or "",
+            "avatar_url": StorageService.sign_url(user.avatar_object_key),
             "phone": user.phone or "",
             "real_name": user.real_name or "",
             "display_name": user.real_name or user.nickname or user.phone or f"用户 {user.id}",
@@ -59,7 +61,8 @@ class UserService:
                     {
                         "id": record.id,
                         "content": record.content or "",
-                        "image_urls": record.image_urls or [],
+                        "image_object_keys": record.image_object_keys or [],
+                        "image_urls": StorageService.sign_urls(record.image_object_keys),
                     }
                 )
         return {

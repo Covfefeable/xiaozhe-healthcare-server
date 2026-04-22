@@ -19,6 +19,7 @@ export default function Page() {
       getList={getCustomerServiceList}
       title="客服管理"
       updateItem={updateCustomerService}
+      uploadBizType="customer_service_avatar"
     />
   );
 }

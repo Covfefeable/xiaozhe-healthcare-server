@@ -2,6 +2,7 @@ from datetime import datetime
 
 from app.extensions import db
 from app.models import News
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -17,7 +18,8 @@ class NewsService:
     def serialize(news: News) -> dict:
         return {
             "id": news.id,
-            "cover_image_url": news.cover_image_url or "",
+            "cover_image_object_key": news.cover_image_object_key or "",
+            "cover_image_url": StorageService.sign_url(news.cover_image_object_key),
             "title": news.title,
             "published_at": beijing_iso(news.published_at),
             "content_markdown": news.content_markdown or "",
@@ -95,7 +97,7 @@ class NewsService:
 
         content = data.get("content_markdown") or ""
         return {
-            "cover_image_url": data.get("cover_image_url") or "",
+            "cover_image_object_key": data.get("cover_image_object_key") or "",
             "title": title,
             "published_at": NewsService._parse_datetime(data.get("published_at")),
             "content_markdown": content,

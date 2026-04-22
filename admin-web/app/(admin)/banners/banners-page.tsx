@@ -26,29 +26,21 @@ import {
   type BannerItem,
   type BannerPayload,
 } from "@/lib/api";
+import { uploadFile } from "@/lib/upload";
 
 type FilterValues = {
   keyword?: string;
 };
 
 type BannerFormValues = {
-  image_url?: string;
+  image_object_key?: string;
   title: string;
   description?: string;
 };
 
-function fileToBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 function toPayload(values: BannerFormValues): BannerPayload {
   return {
-    image_url: values.image_url ?? "",
+    image_object_key: values.image_object_key ?? "",
     title: values.title.trim(),
     description: values.description?.trim() ?? "",
   };
@@ -103,7 +95,7 @@ export function BannersPage() {
   const openCreateModal = () => {
     setEditingBanner(null);
     bannerForm.setFieldsValue({
-      image_url: "",
+      image_object_key: "",
       title: "",
       description: "",
     });
@@ -114,7 +106,7 @@ export function BannersPage() {
   const openEditModal = (banner: BannerItem) => {
     setEditingBanner(banner);
     bannerForm.setFieldsValue({
-      image_url: banner.image_url ?? "",
+      image_object_key: banner.image_object_key ?? "",
       title: banner.title,
       description: banner.description ?? "",
     });
@@ -162,13 +154,13 @@ export function BannersPage() {
   };
 
   const handleImageUpload = async (file: File) => {
-    const base64 = await fileToBase64(file);
-    bannerForm.setFieldValue("image_url", base64);
-    setImageUrl(base64);
+    const result = await uploadFile(file, "banner");
+    bannerForm.setFieldValue("image_object_key", result.object_key);
+    setImageUrl(result.url);
   };
 
   const handleRemoveImage = () => {
-    bannerForm.setFieldValue("image_url", "");
+    bannerForm.setFieldValue("image_object_key", "");
     setImageUrl("");
   };
 
@@ -324,7 +316,7 @@ export function BannersPage() {
               ) : null}
             </Space>
           </Form.Item>
-          <Form.Item hidden name="image_url">
+          <Form.Item hidden name="image_object_key">
             <Input />
           </Form.Item>
         </Form>

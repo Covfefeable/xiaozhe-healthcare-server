@@ -4,6 +4,7 @@ from random import randint
 
 from app.extensions import db
 from app.models import CartItem, MiniappUser, MiniappUserMembership, Order, OrderItem, Product
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso, beijing_strftime
 
 
@@ -153,17 +154,17 @@ class OrderService:
 
         reason = (data.get("reason") or "").strip()
         description = (data.get("description") or "").strip()
-        image_urls = data.get("image_urls") or []
+        image_object_keys = data.get("image_object_keys") or data.get("image_urls") or []
         if not reason:
             raise OrderError("请填写退款原因")
-        if not isinstance(image_urls, list):
+        if not isinstance(image_object_keys, list):
             raise OrderError("退款图片格式不正确")
 
         now = datetime.utcnow()
         order.status = "pending_refund"
         order.refund_reason = reason[:100]
         order.refund_description = description[:2000]
-        order.refund_image_urls = [str(image_url) for image_url in image_urls if str(image_url).strip()][:9]
+        order.refund_image_object_keys = [str(object_key) for object_key in image_object_keys if str(object_key).strip()][:9]
         order.refund_requested_at = now
         order.refund_handled_at = None
         order.refund_reject_reason = ""
@@ -198,7 +199,8 @@ class OrderService:
             "refund": {
                 "reason": order.refund_reason or "",
                 "description": order.refund_description or "",
-                "image_urls": order.refund_image_urls or [],
+                "image_object_keys": order.refund_image_object_keys or [],
+                "image_urls": StorageService.sign_urls(order.refund_image_object_keys),
                 "requested_at": beijing_iso(order.refund_requested_at),
                 "handled_at": beijing_iso(order.refund_handled_at),
                 "reject_reason": order.refund_reject_reason or "",
@@ -225,7 +227,8 @@ class OrderService:
             "quantity": item.quantity,
             "subtotal_cents": item.subtotal_cents,
             "subtotal": _format_price(item.subtotal_cents),
-            "image": item.image_url_snapshot or "",
+            "image_object_key": item.image_object_key_snapshot or "",
+            "image": StorageService.sign_url(item.image_object_key_snapshot),
         }
 
     @staticmethod
@@ -348,7 +351,7 @@ class OrderService:
                     validity_days_snapshot=product.validity_days,
                     quantity=quantity,
                     subtotal_cents=product.price_cents * quantity,
-                    image_url_snapshot=product.image_url or "",
+                    image_object_key_snapshot=product.image_object_key or "",
                 )
             )
         return order

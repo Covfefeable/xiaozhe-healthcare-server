@@ -6,7 +6,7 @@ class Doctor(BaseModel):
     __tablename__ = "admin_doctors"
 
     department_id = db.Column(db.BigInteger, db.ForeignKey("admin_departments.id"), nullable=False)
-    avatar_url = db.Column(db.Text, nullable=True)
+    avatar_object_key = db.Column(db.Text, nullable=True)
     name = db.Column(db.String(50), nullable=False)
     phone = db.Column(db.String(20), nullable=False)
     title = db.Column(db.String(50), nullable=False, default="")

@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from app.models import Product
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -28,7 +29,8 @@ class ProductService:
             "product_type": product.product_type,
             "badge": "今日推荐" if featured else None,
             "featured": featured,
-            "image": product.image_url or None,
+            "image_object_key": product.image_object_key or "",
+            "image": StorageService.sign_url(product.image_object_key) or None,
             "content": product.detail_markdown or "",
             "created_at": beijing_iso(product.created_at),
             "updated_at": beijing_iso(product.updated_at),

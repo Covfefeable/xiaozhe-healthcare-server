@@ -1,5 +1,6 @@
 from app.models import Assistant, MiniappUser
 from app.extensions import db
+from app.services.storage import StorageService
 
 
 ASSISTANT_TYPE_LABELS = {
@@ -21,8 +22,9 @@ class AssistantService:
         assistant_type = assistant.assistant_type or "health_manager"
         return {
             "id": str(assistant.id),
-            "avatarUrl": assistant.avatar_url or "",
-            "avatar": assistant.avatar_url or "",
+            "avatarObjectKey": assistant.avatar_object_key or "",
+            "avatarUrl": StorageService.sign_url(assistant.avatar_object_key),
+            "avatar": StorageService.sign_url(assistant.avatar_object_key),
             "name": assistant.name,
             "phone": assistant.phone,
             "title": ASSISTANT_TYPE_LABELS.get(assistant_type, "健康管家"),

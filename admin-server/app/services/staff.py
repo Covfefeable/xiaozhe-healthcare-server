@@ -1,5 +1,6 @@
 from app.extensions import db
 from app.models import Assistant, CustomerService
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -22,7 +23,8 @@ class StaffService:
     def serialize(cls, item) -> dict:
         data = {
             "id": item.id,
-            "avatar_url": item.avatar_url or "",
+            "avatar_object_key": item.avatar_object_key or "",
+            "avatar_url": StorageService.sign_url(item.avatar_object_key),
             "name": item.name,
             "phone": item.phone,
             "status": item.status,
@@ -124,7 +126,7 @@ class StaffService:
         if len(remark) > 255:
             raise StaffError("备注不能超过 255 个字符")
         return {
-            "avatar_url": data.get("avatar_url") or "",
+            "avatar_object_key": data.get("avatar_object_key") or "",
             "name": name,
             "phone": phone,
             "status": status,

@@ -9,6 +9,14 @@ class BaseConfig:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    ALIYUN_OSS_ACCESS_KEY_ID = os.getenv("ALIYUN_OSS_ACCESS_KEY_ID", "")
+    ALIYUN_OSS_ACCESS_KEY_SECRET = os.getenv("ALIYUN_OSS_ACCESS_KEY_SECRET", "")
+    ALIYUN_OSS_ENDPOINT = os.getenv("ALIYUN_OSS_ENDPOINT", "")
+    ALIYUN_OSS_BUCKET = os.getenv("ALIYUN_OSS_BUCKET", "")
+    ALIYUN_OSS_REGION = os.getenv("ALIYUN_OSS_REGION", "")
+    ALIYUN_OSS_SIGNED_URL_EXPIRES = int(os.getenv("ALIYUN_OSS_SIGNED_URL_EXPIRES", "900"))
+    OSS_UPLOAD_MAX_SIZE_MB = int(os.getenv("OSS_UPLOAD_MAX_SIZE_MB", "20"))
+    OSS_OBJECT_PREFIX = os.getenv("OSS_OBJECT_PREFIX", "dev").strip().strip("/")
     ALEMBIC_VERSION_TABLE = os.getenv(
         "ALEMBIC_VERSION_TABLE",
         "miniapp_alembic_version",

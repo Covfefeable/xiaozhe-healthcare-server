@@ -9,6 +9,7 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from app.extensions import db
 from app.models import Assistant, Doctor, MiniappUser
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso, beijing_strftime
 
 
@@ -54,7 +55,8 @@ class AuthService:
         return {
             "id": str(user.id),
             "nickname": user.nickname or "",
-            "avatar_url": user.avatar_url or "",
+            "avatar_object_key": user.avatar_object_key or "",
+            "avatar_url": StorageService.sign_url(user.avatar_object_key),
             "phone": user.phone or "",
             "masked_phone": AuthService._mask_phone(user.phone),
             "gender": user.gender,
@@ -121,13 +123,10 @@ class AuthService:
 
     @staticmethod
     def update_profile(user: MiniappUser, data: dict) -> dict:
-        avatar_url = data.get("avatar_url")
+        avatar_object_key = data.get("avatar_object_key")
         nickname = data.get("nickname")
-        if avatar_url is not None:
-            avatar_url = str(avatar_url).strip()
-            if len(avatar_url) > 2_000_000:
-                raise AuthError("头像文件过大")
-            user.avatar_url = avatar_url
+        if avatar_object_key is not None:
+            user.avatar_object_key = str(avatar_object_key).strip()
         if nickname is not None:
             user.nickname = str(nickname).strip()[:50]
         db.session.commit()

@@ -5,6 +5,7 @@ from app.models import Assistant, ChatConversation, ChatConversationMember, Doct
 from app.services.chat import ChatService
 from app.services.assistants import AssistantService
 from app.services.doctors import DoctorService
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -26,7 +27,8 @@ class HealthArchiveService:
             "id": str(user.id),
             "name": user.real_name or user.nickname or "",
             "nickname": user.nickname or "",
-            "avatar_url": user.avatar_url or "",
+            "avatar_object_key": user.avatar_object_key or "",
+            "avatar_url": StorageService.sign_url(user.avatar_object_key),
             "phone": user.phone or "",
             "gender": user.gender or "unknown",
             "gender_label": HealthArchiveService._gender_label(user.gender),
@@ -41,7 +43,8 @@ class HealthArchiveService:
         return {
             "id": str(record.id),
             "content": record.content or "",
-            "image_urls": record.image_urls or [],
+            "image_object_keys": record.image_object_keys or [],
+            "image_urls": StorageService.sign_urls(record.image_object_keys),
             "sort_order": record.sort_order,
             "created_at": beijing_iso(record.created_at),
             "updated_at": beijing_iso(record.updated_at),
@@ -178,17 +181,17 @@ class HealthArchiveService:
         ).delete(synchronize_session=False)
         for index, item in enumerate(items):
             content = str(item.get("content") or "").strip()
-            image_urls = item.get("image_urls") or []
-            if not content and not image_urls:
+            image_object_keys = item.get("image_object_keys") or item.get("image_urls") or []
+            if not content and not image_object_keys:
                 continue
-            if not isinstance(image_urls, list):
-                image_urls = []
+            if not isinstance(image_object_keys, list):
+                image_object_keys = []
             db.session.add(
                 MiniappHealthRecord(
                     user_id=user.id,
                     record_type=record_type,
                     content=content,
-                    image_urls=[str(url) for url in image_urls[:9]],
+                    image_object_keys=[str(url) for url in image_object_keys[:9]],
                     sort_order=index,
                 )
             )

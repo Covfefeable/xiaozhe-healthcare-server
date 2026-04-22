@@ -8,7 +8,7 @@ class MiniappUser(BaseModel):
     openid = db.Column(db.String(64), nullable=False)
     unionid = db.Column(db.String(64), nullable=True)
     nickname = db.Column(db.String(50), nullable=False, default="")
-    avatar_url = db.Column(db.Text, nullable=True)
+    avatar_object_key = db.Column(db.Text, nullable=True)
     phone = db.Column(db.String(20), nullable=True)
     gender = db.Column(db.String(10), nullable=False, default="unknown")
     birthday = db.Column(db.Date, nullable=True)
@@ -36,7 +36,7 @@ class Order(BaseModel):
     refunded_at = db.Column(db.DateTime, nullable=True)
     refund_reason = db.Column(db.String(100), nullable=False, default="")
     refund_description = db.Column(db.Text, nullable=False, default="")
-    refund_image_urls = db.Column(db.JSON, nullable=False, default=list)
+    refund_image_object_keys = db.Column(db.JSON, nullable=False, default=list)
     refund_requested_at = db.Column(db.DateTime, nullable=True)
     refund_handled_at = db.Column(db.DateTime, nullable=True)
     refund_reject_reason = db.Column(db.String(255), nullable=False, default="")
@@ -59,7 +59,7 @@ class OrderItem(BaseModel):
     validity_days_snapshot = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     subtotal_cents = db.Column(db.Integer, nullable=False)
-    image_url_snapshot = db.Column(db.Text, nullable=True)
+    image_object_key_snapshot = db.Column(db.Text, nullable=True)
 
 
 class MiniappHealthRecord(BaseModel):
@@ -68,7 +68,7 @@ class MiniappHealthRecord(BaseModel):
     user_id = db.Column(db.BigInteger, db.ForeignKey("miniapp_users.id"), nullable=False, index=True)
     record_type = db.Column(db.String(30), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False, default="")
-    image_urls = db.Column(db.JSON, nullable=False, default=list)
+    image_object_keys = db.Column(db.JSON, nullable=False, default=list)
     sort_order = db.Column(db.Integer, nullable=False, default=0)
     deleted_at = db.Column(db.DateTime, nullable=True, index=True)
 

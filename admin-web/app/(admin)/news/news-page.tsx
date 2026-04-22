@@ -28,6 +28,7 @@ import {
   type NewsItem,
   type NewsPayload,
 } from "@/lib/api";
+import { uploadFile } from "@/lib/upload";
 
 const MdEditor = dynamic(() => import("react-markdown-editor-lite"), { ssr: false });
 const mdParser = new MarkdownIt({
@@ -41,24 +42,15 @@ type FilterValues = {
 };
 
 type NewsFormValues = {
-  cover_image_url?: string;
+  cover_image_object_key?: string;
   title: string;
   published_at: string;
   content_markdown?: string;
 };
 
-function fileToBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 function toPayload(values: NewsFormValues, content: string): NewsPayload {
   return {
-    cover_image_url: values.cover_image_url ?? "",
+    cover_image_object_key: values.cover_image_object_key ?? "",
     title: values.title.trim(),
     published_at: new Date(values.published_at).toISOString(),
     content_markdown: content,
@@ -125,7 +117,7 @@ export function NewsPage() {
   const openCreateModal = () => {
     setEditingNews(null);
     newsForm.setFieldsValue({
-      cover_image_url: "",
+      cover_image_object_key: "",
       title: "",
       published_at: toDatetimeLocalValue(),
     });
@@ -137,7 +129,7 @@ export function NewsPage() {
   const openEditModal = (news: NewsItem) => {
     setEditingNews(news);
     newsForm.setFieldsValue({
-      cover_image_url: news.cover_image_url ?? "",
+      cover_image_object_key: news.cover_image_object_key ?? "",
       title: news.title,
       published_at: toDatetimeLocalValue(news.published_at),
     });
@@ -186,18 +178,19 @@ export function NewsPage() {
   };
 
   const handleCoverUpload = async (file: File) => {
-    const base64 = await fileToBase64(file);
-    newsForm.setFieldValue("cover_image_url", base64);
-    setCoverImageUrl(base64);
+    const result = await uploadFile(file, "news");
+    newsForm.setFieldValue("cover_image_object_key", result.object_key);
+    setCoverImageUrl(result.url);
   };
 
   const handleRemoveCover = () => {
-    newsForm.setFieldValue("cover_image_url", "");
+    newsForm.setFieldValue("cover_image_object_key", "");
     setCoverImageUrl("");
   };
 
   const handleEditorImageUpload = async (file: File) => {
-    return fileToBase64(file);
+    const result = await uploadFile(file, "markdown");
+    return result.url;
   };
 
   const columns: TableProps<NewsItem>["columns"] = [
@@ -361,7 +354,7 @@ export function NewsPage() {
               ) : null}
             </Space>
           </Form.Item>
-          <Form.Item hidden name="cover_image_url">
+          <Form.Item hidden name="cover_image_object_key">
             <Input />
           </Form.Item>
           <Form.Item label="资讯内容">

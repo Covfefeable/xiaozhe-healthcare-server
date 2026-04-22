@@ -21,6 +21,14 @@ services:
       SECRET_KEY: ${MINIAPP_SECRET_KEY:-replace-miniapp-secret}
       DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@postgres:5432/${DB_DATABASE:-xiaozhe_medical}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ALIYUN_OSS_ACCESS_KEY_ID: ${ALIYUN_OSS_ACCESS_KEY_ID:-}
+      ALIYUN_OSS_ACCESS_KEY_SECRET: ${ALIYUN_OSS_ACCESS_KEY_SECRET:-}
+      ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT:-https://oss-cn-hangzhou.aliyuncs.com}
+      ALIYUN_OSS_BUCKET: ${ALIYUN_OSS_BUCKET:-xiaozhe-medical}
+      ALIYUN_OSS_REGION: ${ALIYUN_OSS_REGION:-cn-hangzhou}
+      ALIYUN_OSS_SIGNED_URL_EXPIRES: ${ALIYUN_OSS_SIGNED_URL_EXPIRES:-900}
+      OSS_UPLOAD_MAX_SIZE_MB: ${OSS_UPLOAD_MAX_SIZE_MB:-20}
+      OSS_OBJECT_PREFIX: ${OSS_OBJECT_PREFIX:-dev}
       ALEMBIC_VERSION_TABLE: ${MINIAPP_ALEMBIC_VERSION_TABLE:-miniapp_alembic_version}
       DB_TABLE_PREFIX: ${MINIAPP_DB_TABLE_PREFIX:-miniapp_}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
@@ -59,6 +67,14 @@ services:
       CORS_ORIGINS: ${ADMIN_CORS_ORIGINS:-http://localhost:3000}
       DATABASE_URL: postgresql+psycopg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-xiaozhe123456}@postgres:5432/${DB_DATABASE:-xiaozhe_medical}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ALIYUN_OSS_ACCESS_KEY_ID: ${ALIYUN_OSS_ACCESS_KEY_ID:-}
+      ALIYUN_OSS_ACCESS_KEY_SECRET: ${ALIYUN_OSS_ACCESS_KEY_SECRET:-}
+      ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT:-https://oss-cn-hangzhou.aliyuncs.com}
+      ALIYUN_OSS_BUCKET: ${ALIYUN_OSS_BUCKET:-xiaozhe-medical}
+      ALIYUN_OSS_REGION: ${ALIYUN_OSS_REGION:-cn-hangzhou}
+      ALIYUN_OSS_SIGNED_URL_EXPIRES: ${ALIYUN_OSS_SIGNED_URL_EXPIRES:-900}
+      OSS_UPLOAD_MAX_SIZE_MB: ${OSS_UPLOAD_MAX_SIZE_MB:-20}
+      OSS_OBJECT_PREFIX: ${OSS_OBJECT_PREFIX:-dev}
       ALEMBIC_VERSION_TABLE: ${ADMIN_ALEMBIC_VERSION_TABLE:-admin_alembic_version}
       DB_TABLE_PREFIX: ${ADMIN_DB_TABLE_PREFIX:-admin_}
     depends_on:

@@ -35,6 +35,7 @@ import {
   type ProductStatus,
   type ProductType,
 } from "@/lib/api";
+import { uploadFile } from "@/lib/upload";
 
 const MdEditor = dynamic(() => import("react-markdown-editor-lite"), { ssr: false });
 const mdParser = new MarkdownIt({
@@ -56,7 +57,7 @@ type ProductFormValues = {
   price_yuan: number;
   validity_days?: number;
   product_type: ProductType;
-  image_url?: string;
+  image_object_key?: string;
   detail_markdown?: string;
   sort_order?: number;
 };
@@ -105,19 +106,10 @@ function toPayload(values: ProductFormValues): ProductPayload {
     price_cents: yuanToCents(values.price_yuan),
     validity_days: values.product_type === "membership" ? values.validity_days ?? 0 : 0,
     product_type: values.product_type,
-    image_url: values.image_url ?? "",
+    image_object_key: values.image_object_key ?? "",
     detail_markdown: values.detail_markdown ?? "",
     sort_order: values.sort_order ?? 0,
   };
-}
-
-function fileToBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 }
 
 export function ProductsPage() {
@@ -176,7 +168,7 @@ export function ProductsPage() {
       price_yuan: 0,
       validity_days: undefined,
       product_type: "other",
-      image_url: "",
+      image_object_key: "",
       sort_order: 0,
     });
     setMarkdownValue("");
@@ -192,7 +184,7 @@ export function ProductsPage() {
       price_yuan: centsToYuan(product.price_cents),
       validity_days: product.product_type === "membership" ? product.validity_days : undefined,
       product_type: product.product_type,
-      image_url: product.image_url ?? "",
+      image_object_key: product.image_object_key ?? "",
       sort_order: product.sort_order,
     });
     setMarkdownValue(product.detail_markdown ?? "");
@@ -367,17 +359,18 @@ export function ProductsPage() {
   };
 
   const handleUploadImage = async (file: File) => {
-    return fileToBase64(file);
+    const result = await uploadFile(file, "markdown");
+    return result.url;
   };
 
   const handleProductImageUpload = async (file: File) => {
-    const base64 = await fileToBase64(file);
-    productForm.setFieldValue("image_url", base64);
-    setImageUrl(base64);
+    const result = await uploadFile(file, "product");
+    productForm.setFieldValue("image_object_key", result.object_key);
+    setImageUrl(result.url);
   };
 
   const handleRemoveProductImage = () => {
-    productForm.setFieldValue("image_url", "");
+    productForm.setFieldValue("image_object_key", "");
     setImageUrl("");
   };
 
@@ -575,7 +568,7 @@ export function ProductsPage() {
               ) : null}
             </Space>
           </Form.Item>
-          <Form.Item hidden name="image_url">
+          <Form.Item hidden name="image_object_key">
             <Input />
           </Form.Item>
           <Form.Item label="产品详情">

@@ -18,7 +18,7 @@ class Order(BaseModel):
     refunded_at = db.Column(db.DateTime, nullable=True)
     refund_reason = db.Column(db.String(100), nullable=False, default="")
     refund_description = db.Column(db.Text, nullable=False, default="")
-    refund_image_urls = db.Column(db.JSON, nullable=False, default=list)
+    refund_image_object_keys = db.Column(db.JSON, nullable=False, default=list)
     refund_requested_at = db.Column(db.DateTime, nullable=True)
     refund_handled_at = db.Column(db.DateTime, nullable=True)
     refund_reject_reason = db.Column(db.String(255), nullable=False, default="")
@@ -41,6 +41,6 @@ class OrderItem(BaseModel):
     validity_days_snapshot = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     subtotal_cents = db.Column(db.Integer, nullable=False)
-    image_url_snapshot = db.Column(db.Text, nullable=True)
+    image_object_key_snapshot = db.Column(db.Text, nullable=True)
 
     product = db.relationship("Product", lazy="joined")

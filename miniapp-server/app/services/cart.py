@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from app.extensions import db
 from app.models import CartItem, MiniappUser, Product
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -86,7 +87,8 @@ class CartService:
             "product_id": str(item.product_id),
             "title": product.name if product else "",
             "desc": product.summary if product else "",
-            "image": product.image_url or "" if product else "",
+            "image_object_key": product.image_object_key or "" if product else "",
+            "image": StorageService.sign_url(product.image_object_key) if product else "",
             "price": _format_price(price_cents),
             "price_cents": price_cents,
             "validity_days": product.validity_days if product else None,

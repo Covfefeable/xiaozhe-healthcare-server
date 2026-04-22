@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from app.extensions import db
 from app.models import MiniappUser, Order
+from app.services.storage import StorageService
 from app.utils.time import beijing_iso
 
 
@@ -60,7 +61,8 @@ class OrderService:
             "refund": {
                 "reason": order.refund_reason or "",
                 "description": order.refund_description or "",
-                "image_urls": order.refund_image_urls or [],
+                "image_object_keys": order.refund_image_object_keys or [],
+                "image_urls": StorageService.sign_urls(order.refund_image_object_keys),
                 "requested_at": beijing_iso(order.refund_requested_at),
                 "handled_at": beijing_iso(order.refund_handled_at),
                 "reject_reason": order.refund_reject_reason or "",

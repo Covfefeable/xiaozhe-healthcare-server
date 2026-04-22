@@ -8,7 +8,7 @@ class MiniappUser(BaseModel):
     openid = db.Column(db.String(64), nullable=False, unique=True, index=True)
     unionid = db.Column(db.String(64), nullable=True, index=True)
     nickname = db.Column(db.String(50), nullable=False, default="")
-    avatar_url = db.Column(db.Text, nullable=True)
+    avatar_object_key = db.Column(db.Text, nullable=True)
     phone = db.Column(db.String(20), nullable=True, index=True)
     gender = db.Column(db.String(10), nullable=False, default="unknown")
     birthday = db.Column(db.Date, nullable=True)
@@ -42,7 +42,7 @@ class MiniappHealthRecord(BaseModel):
     user_id = db.Column(db.BigInteger, db.ForeignKey("miniapp_users.id"), nullable=False, index=True)
     record_type = db.Column(db.String(30), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False, default="")
-    image_urls = db.Column(db.JSON, nullable=False, default=list)
+    image_object_keys = db.Column(db.JSON, nullable=False, default=list)
     sort_order = db.Column(db.Integer, nullable=False, default=0)
     deleted_at = db.Column(db.DateTime, nullable=True, index=True)
 

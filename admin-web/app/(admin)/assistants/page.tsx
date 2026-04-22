@@ -26,6 +26,7 @@ export default function Page() {
       getList={getAssistantList}
       title="助理管理"
       updateItem={updateAssistant}
+      uploadBizType="assistant_avatar"
     />
   );
 }

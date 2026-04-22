@@ -1,5 +1,6 @@
 from app.extensions import db
 from app.models import Department, Doctor, MiniappUser
+from app.services.storage import StorageService
 
 
 class DoctorError(Exception):
@@ -23,8 +24,9 @@ class DoctorService:
             "department_id": str(doctor.department_id),
             "departmentLabel": department_name,
             "department_name": department_name,
-            "avatarUrl": _normalize_image_src(doctor.avatar_url),
-            "avatar": _normalize_image_src(doctor.avatar_url),
+            "avatarObjectKey": doctor.avatar_object_key or "",
+            "avatarUrl": _normalize_image_src(StorageService.sign_url(doctor.avatar_object_key)),
+            "avatar": _normalize_image_src(StorageService.sign_url(doctor.avatar_object_key)),
             "name": doctor.name,
             "title": doctor.title or "",
             "hospital": doctor.hospital or "",

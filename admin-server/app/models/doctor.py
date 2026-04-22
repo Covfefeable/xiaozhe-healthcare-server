@@ -13,7 +13,7 @@ class Doctor(BaseModel):
         nullable=False,
         index=True,
     )
-    avatar_url = db.Column(db.Text, nullable=True)
+    avatar_object_key = db.Column(db.Text, nullable=True)
     name = db.Column(db.String(50), nullable=False, index=True)
     phone = db.Column(db.String(20), nullable=False)
     title = db.Column(db.String(50), nullable=False, default="")
