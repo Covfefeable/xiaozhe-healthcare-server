@@ -23,6 +23,8 @@ BIZ_TYPE_DIRS = {
     "customer_service_avatar": "avatars/customer-services",
 }
 
+MARKDOWN_SIGNED_URL_EXPIRES = 3650 * 24 * 60 * 60
+
 
 class StorageService:
     @staticmethod
@@ -36,21 +38,22 @@ class StorageService:
 
         object_key = StorageService._build_object_key(file.filename, biz_type)
         StorageService._bucket().put_object(object_key, content)
+        signed_url_expires = MARKDOWN_SIGNED_URL_EXPIRES if biz_type == "markdown" else None
         return {
             "object_key": object_key,
-            "url": StorageService.sign_url(object_key),
+            "url": StorageService.sign_url(object_key, signed_url_expires),
             "file_name": file.filename,
             "mime_type": file.mimetype or "",
             "size": len(content),
         }
 
     @staticmethod
-    def sign_url(object_key: str | None) -> str:
+    def sign_url(object_key: str | None, expires: int | None = None) -> str:
         if not object_key:
             return ""
         if object_key.startswith(("http://", "https://", "data:")):
             return object_key
-        expires = current_app.config["ALIYUN_OSS_SIGNED_URL_EXPIRES"]
+        expires = expires or current_app.config["ALIYUN_OSS_SIGNED_URL_EXPIRES"]
         return StorageService._bucket().sign_url("GET", object_key, expires, slash_safe=True)
 
     @staticmethod

@@ -12,6 +12,7 @@ import {
   type AgreementItem,
   type AgreementType,
 } from "@/lib/api";
+import { uploadFile } from "@/lib/upload";
 
 const MdEditor = dynamic(() => import("react-markdown-editor-lite"), { ssr: false });
 const mdParser = new MarkdownIt({
@@ -102,6 +103,11 @@ export function AgreementsPage({ initialType }: AgreementsPageProps) {
     }
   };
 
+  const handleEditorImageUpload = async (file: File) => {
+    const result = await uploadFile(file, "markdown");
+    return result.url;
+  };
+
   return (
     <>
       {contextHolder}
@@ -143,6 +149,7 @@ export function AgreementsPage({ initialType }: AgreementsPageProps) {
                   },
                 }}
                 onChange={({ text }) => setMarkdownValue(text)}
+                onImageUpload={handleEditorImageUpload}
                 renderHTML={(text) => mdParser.render(text)}
                 style={{ height: 520 }}
                 value={markdownValue}
