@@ -8,6 +8,15 @@ type ApiResponse<T> = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5002/api";
 
+function redirectToLogin() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  if (window.location.pathname !== "/login") {
+    window.location.replace("/login");
+  }
+}
+
 async function request<T>(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers);
   headers.set("Content-Type", "application/json");
@@ -26,6 +35,9 @@ async function request<T>(path: string, init: RequestInit = {}) {
   if (!response.ok || payload.code !== 0) {
     if (response.status === 401) {
       clearSession();
+      if (!path.startsWith("/auth/login")) {
+        redirectToLogin();
+      }
     }
     throw new Error(payload.message || "请求失败");
   }
