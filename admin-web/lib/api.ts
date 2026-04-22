@@ -77,6 +77,25 @@ export function logout() {
   return request<null>("/auth/logout", { method: "POST" });
 }
 
+export type DashboardData = {
+  overview: {
+    today_new_users: number;
+    active_members: number;
+    today_orders: number;
+    today_paid_amount_cents: number;
+    today_paid_amount: string;
+  };
+  todos: {
+    pending_refund_orders: number;
+    in_progress_orders: number;
+    pending_payment_orders: number;
+  };
+};
+
+export function getDashboard() {
+  return request<DashboardData>("/dashboard");
+}
+
 export type ProductStatus = "draft" | "active" | "inactive";
 export type ProductType = "membership" | "other";
 

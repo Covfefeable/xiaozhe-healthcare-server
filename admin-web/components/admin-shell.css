@@ -12,21 +12,7 @@
   height: 72px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 20px;
-}
-
-.admin-shell__brand-mark {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  background: #d8f3ef;
-  color: #0b3d38;
-  font-size: 19px;
-  font-weight: 800;
+  padding: 0 24px;
 }
 
 .admin-shell__brand-title,
@@ -36,14 +22,15 @@
 
 .admin-shell__brand-title {
   color: #ffffff !important;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1.25;
+  letter-spacing: 0.02em;
 }
 
 .admin-shell__brand-subtitle {
   color: rgba(255, 255, 255, 0.52) !important;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .admin-shell__menu {

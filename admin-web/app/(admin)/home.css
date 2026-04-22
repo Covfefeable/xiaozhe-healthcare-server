@@ -1,0 +1,155 @@
+.home-page {
+  min-height: calc(100vh - 116px);
+}
+
+.home-hero {
+  margin-bottom: 20px;
+  padding: 24px 28px;
+  border: 1px solid #dbe8e6;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 16% 20%, rgba(15, 118, 110, 0.12), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, #f5fbfa 100%);
+}
+
+.home-hero .ant-typography {
+  margin: 0 !important;
+}
+
+.home-hero span.ant-typography {
+  display: block;
+  margin-top: 6px !important;
+  color: #60726e;
+}
+
+.home-metric-card,
+.home-panel {
+  border: 1px solid #e2ebea;
+  box-shadow: none;
+}
+
+.home-metric-card .ant-statistic-title {
+  color: #667874;
+}
+
+.home-metric-card .ant-statistic-content {
+  color: #102421;
+  font-weight: 750;
+}
+
+.home-section {
+  margin-top: 18px;
+}
+
+.home-todo,
+.home-shortcut {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+}
+
+.home-todo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f7faf9;
+  transition:
+    background-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.home-todo:hover {
+  background: #eef7f5;
+  transform: translateY(-1px);
+}
+
+.home-todo strong,
+.home-shortcut strong {
+  display: block;
+  color: #1d302c;
+  font-size: 15px;
+}
+
+.home-todo small,
+.home-shortcut small {
+  display: block;
+  margin-top: 3px;
+  color: #6c7d79;
+  font-size: 12px;
+}
+
+.home-todo em {
+  min-width: 42px;
+  height: 34px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 34px;
+  text-align: center;
+  background: #0f766e;
+}
+
+.home-todo--danger em {
+  background: #c24135;
+}
+
+.home-todo--muted em {
+  color: #384641;
+  background: #dde8e6;
+}
+
+.home-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.home-shortcut {
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e4eeec;
+  border-radius: 16px;
+  background: #ffffff;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.home-shortcut:hover {
+  border-color: rgba(15, 118, 110, 0.34);
+  box-shadow: 0 12px 28px rgba(18, 42, 38, 0.08);
+  transform: translateY(-1px);
+}
+
+.home-shortcut__icon {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #0f766e;
+  background: #e5f7f4;
+  font-size: 18px;
+}
+
+.home-shortcut__body {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .home-shortcuts {
+    grid-template-columns: 1fr;
+  }
+}

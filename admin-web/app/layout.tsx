@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import "@ant-design/v5-patch-for-react-19";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "react-markdown-editor-lite/lib/index.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "小哲医疗 Admin",
+  title: "小哲医疗管理后台",
   description: "小哲医疗后台管理系统",
 };
 

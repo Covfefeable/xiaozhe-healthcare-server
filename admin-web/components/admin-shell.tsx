@@ -40,7 +40,6 @@ import "./admin-shell.css";
 const { Header, Sider, Content } = Layout;
 
 const text = {
-  brandMark: "\u54f2",
   brandName: "\u5c0f\u54f2\u533b\u7597",
   console: "\u540e\u53f0\u7ba1\u7406",
   home: "\u9996\u9875",
@@ -174,10 +173,38 @@ export function AdminShell({ children }: AdminShellProps) {
     : pathname.startsWith("/news")
       ? "news"
       : "home";
+  const activeTitle =
+    activeKey === "products"
+      ? text.products
+      : activeKey === "orders"
+        ? text.orders
+      : activeKey === "users"
+        ? text.users
+      : activeKey === "banners"
+        ? text.banners
+      : activeKey === "departments"
+        ? text.departments
+      : activeKey === "doctors"
+        ? text.doctors
+      : activeKey === "assistants"
+        ? text.assistants
+      : activeKey === "customer-services"
+        ? text.customerServices
+      : activeKey === "news"
+        ? text.news
+      : activeKey === "agreement-user"
+        ? text.userAgreement
+      : activeKey === "agreement-privacy"
+        ? text.privacyPolicy
+        : text.home;
 
   useEffect(() => {
     setUser(getStoredUser());
   }, []);
+
+  useEffect(() => {
+    document.title = `${activeTitle} - 小哲医疗管理后台`;
+  }, [activeTitle]);
 
   const handleLogout = async () => {
     try {
@@ -269,7 +296,6 @@ export function AdminShell({ children }: AdminShellProps) {
           width={264}
         >
           <div className="admin-shell__brand">
-            <div className="admin-shell__brand-mark">{text.brandMark}</div>
             {!collapsed && (
               <div>
                 <Typography.Text className="admin-shell__brand-title">
@@ -307,32 +333,7 @@ export function AdminShell({ children }: AdminShellProps) {
                   <Breadcrumb
                     items={[
                       { title: text.brandName },
-                      {
-                        title:
-                          activeKey === "products"
-                            ? text.products
-                            : activeKey === "orders"
-                              ? text.orders
-                            : activeKey === "users"
-                              ? text.users
-                            : activeKey === "banners"
-                              ? text.banners
-                            : activeKey === "departments"
-                              ? text.departments
-                            : activeKey === "doctors"
-                              ? text.doctors
-                            : activeKey === "assistants"
-                              ? text.assistants
-                            : activeKey === "customer-services"
-                              ? text.customerServices
-                            : activeKey === "news"
-                              ? text.news
-                            : activeKey === "agreement-user"
-                              ? text.userAgreement
-                            : activeKey === "agreement-privacy"
-                              ? text.privacyPolicy
-                              : text.home,
-                      },
+                      { title: activeTitle },
                     ]}
                   />
                 </div>
