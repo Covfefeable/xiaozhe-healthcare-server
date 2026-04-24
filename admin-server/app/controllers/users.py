@@ -41,3 +41,14 @@ def renew_membership(user_id: int):
     except UserError as exc:
         return error_response(message=exc.message, code=exc.code)
     return success_response(data=data, message="续期成功")
+
+
+def assign_health_manager(user_id: int):
+    auth_error = _require_auth()
+    if auth_error:
+        return auth_error
+    try:
+        data = UserService.assign_health_manager(user_id, request.get_json(silent=True) or {})
+    except UserError as exc:
+        return error_response(message=exc.message, code=exc.code)
+    return success_response(data=data, message="分配成功")

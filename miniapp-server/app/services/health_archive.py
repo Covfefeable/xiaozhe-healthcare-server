@@ -23,6 +23,7 @@ class HealthArchiveService:
     @staticmethod
     def serialize_user(user: MiniappUser) -> dict:
         age = HealthArchiveService._age(user.birthday)
+        is_member = bool(user.membership_expires_at and user.membership_expires_at > datetime.utcnow())
         return {
             "id": str(user.id),
             "name": user.real_name or user.nickname or "",
@@ -34,6 +35,9 @@ class HealthArchiveService:
             "gender_label": HealthArchiveService._gender_label(user.gender),
             "birthday": user.birthday.isoformat() if user.birthday else "",
             "age": age,
+            "membership_status": "active" if is_member else "none",
+            "membership_label": "会员用户" if is_member else "普通用户",
+            "membership_expires_at": beijing_iso(user.membership_expires_at),
             "created_at": beijing_iso(user.created_at),
             "last_login_at": beijing_iso(user.last_login_at),
         }

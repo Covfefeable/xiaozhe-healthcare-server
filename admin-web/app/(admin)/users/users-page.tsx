@@ -10,7 +10,9 @@ import {
   Image,
   Input,
   Modal,
+  Radio,
   Space,
+  Select,
   Table,
   Tag,
   Typography,
@@ -21,9 +23,12 @@ import {
 import { useEffect, useState } from "react";
 
 import {
+  assignMiniappUserHealthManager,
+  getAssistantList,
   getMiniappUser,
   getMiniappUserList,
   renewMiniappUserMembership,
+  type StaffItem,
   type AdminMiniappHealthRecord,
   type AdminMiniappUser,
 } from "@/lib/api";
@@ -83,14 +88,20 @@ export function UsersPage() {
   const [messageApi, contextHolder] = message.useMessage();
   const [filterForm] = Form.useForm<FilterValues>();
   const [renewForm] = Form.useForm<{ membership_expires_at: string }>();
+  const [assignForm] = Form.useForm<{ mode: "random" | "specified"; assistant_id?: number }>();
   const [items, setItems] = useState<AdminMiniappUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [renewLoading, setRenewLoading] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [healthManagers, setHealthManagers] = useState<StaffItem[]>([]);
+  const [healthManagersLoading, setHealthManagersLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<AdminMiniappUser | null>(null);
   const [renewUser, setRenewUser] = useState<AdminMiniappUser | null>(null);
+  const [assignUser, setAssignUser] = useState<AdminMiniappUser | null>(null);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
 
   const loadUsers = async (nextPage = pagination.current, nextPageSize = pagination.pageSize) => {
@@ -140,6 +151,33 @@ export function UsersPage() {
     setRenewOpen(true);
   };
 
+  const loadHealthManagers = async () => {
+    setHealthManagersLoading(true);
+    try {
+      const result = await getAssistantList({
+        assistant_type: "health_manager",
+        status: "active",
+        page: 1,
+        page_size: 100,
+      });
+      setHealthManagers(result.items);
+    } catch (error) {
+      messageApi.error(error instanceof Error ? error.message : "健康管家加载失败");
+    } finally {
+      setHealthManagersLoading(false);
+    }
+  };
+
+  const openAssignModal = async (user: AdminMiniappUser) => {
+    setAssignUser(user);
+    assignForm.setFieldsValue({
+      mode: user.health_manager_id ? "specified" : "random",
+      assistant_id: user.health_manager_id ?? undefined,
+    });
+    setAssignOpen(true);
+    await loadHealthManagers();
+  };
+
   const handleRenew = async () => {
     if (!renewUser) {
       return;
@@ -160,6 +198,28 @@ export function UsersPage() {
       messageApi.error(error instanceof Error ? error.message : "续期失败");
     } finally {
       setRenewLoading(false);
+    }
+  };
+
+  const assignMode = Form.useWatch("mode", assignForm) ?? "random";
+
+  const handleAssignHealthManager = async () => {
+    if (!assignUser) {
+      return;
+    }
+    const values = await assignForm.validateFields();
+    setAssignLoading(true);
+    try {
+      const updatedUser = await assignMiniappUserHealthManager(assignUser.id, values);
+      messageApi.success("分配成功");
+      setAssignOpen(false);
+      setAssignUser(null);
+      setCurrentUser((value) => (value?.id === updatedUser.id ? updatedUser : value));
+      await loadUsers(pagination.current, pagination.pageSize);
+    } catch (error) {
+      messageApi.error(error instanceof Error ? error.message : "分配失败");
+    } finally {
+      setAssignLoading(false);
     }
   };
 
@@ -188,14 +248,24 @@ export function UsersPage() {
     { title: "最近登录", dataIndex: "last_login_at", key: "last_login_at", width: 180, render: formatDateTime },
     { title: "注册时间", dataIndex: "created_at", key: "created_at", width: 180, render: formatDateTime },
     {
+      title: "健康管家",
+      dataIndex: "health_manager_name",
+      key: "health_manager_name",
+      width: 180,
+      render: (_: string, record) => record.health_manager_name || "-",
+    },
+    {
       title: "操作",
       key: "action",
       fixed: "right",
-      width: 160,
+      width: 240,
       render: (_, record) => (
         <Space size={4}>
           <Button type="link" onClick={() => void openDetail(record)}>
             查看详情
+          </Button>
+          <Button type="link" onClick={() => void openAssignModal(record)}>
+            分配健康管家
           </Button>
           <Button type="link" onClick={() => openRenewModal(record)}>
             续期
@@ -288,6 +358,11 @@ export function UsersPage() {
                 {currentUser.membership_status === "active" ? "会员" : "普通用户"}
               </Descriptions.Item>
               <Descriptions.Item label="会员有效期">{currentUser.membership_expires_at || "-"}</Descriptions.Item>
+              <Descriptions.Item label="健康管家">
+                {currentUser.health_manager_name
+                  ? `${currentUser.health_manager_name}${currentUser.health_manager_phone ? `（${currentUser.health_manager_phone}）` : ""}`
+                  : "-"}
+              </Descriptions.Item>
             </Descriptions>
 
             <Typography.Title level={5}>既往病史</Typography.Title>
@@ -319,6 +394,44 @@ export function UsersPage() {
           >
             <Input type="datetime-local" />
           </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="分配健康管家"
+        open={assignOpen}
+        confirmLoading={assignLoading}
+        okText="保存"
+        cancelText="取消"
+        onCancel={() => setAssignOpen(false)}
+        onOk={() => void handleAssignHealthManager()}
+      >
+        <Form form={assignForm} layout="vertical">
+          <Form.Item label="用户">
+            {assignUser ? `${assignUser.display_name}（${assignUser.phone || "无手机号"}）` : "-"}
+          </Form.Item>
+          <Form.Item label="分配方式" name="mode" initialValue="random" rules={[{ required: true, message: "请选择分配方式" }]}>
+            <Radio.Group>
+              <Space direction="vertical">
+                <Radio value="random">随机分配</Radio>
+                <Radio value="specified">指定健康管家</Radio>
+              </Space>
+            </Radio.Group>
+          </Form.Item>
+          {assignMode === "specified" ? (
+            <Form.Item label="健康管家" name="assistant_id" rules={[{ required: true, message: "请选择健康管家" }]}>
+              <Select
+                loading={healthManagersLoading}
+                placeholder="请选择健康管家"
+                options={healthManagers.map((item) => ({
+                  label: `${item.name}${item.phone ? `（${item.phone}）` : ""}`,
+                  value: item.id,
+                }))}
+                showSearch
+                optionFilterProp="label"
+              />
+            </Form.Item>
+          ) : null}
         </Form>
       </Modal>
     </>

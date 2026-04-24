@@ -602,6 +602,9 @@ export type AdminMiniappUser = {
   membership_status: "active" | "none";
   membership_expires_at: string;
   membership_expires_at_datetime: string | null;
+  health_manager_id: number | null;
+  health_manager_name: string;
+  health_manager_phone: string;
   last_login_at: string | null;
   created_at: string | null;
   archive?: {
@@ -631,6 +634,16 @@ export function renewMiniappUserMembership(id: number, membership_expires_at: st
   return request<AdminMiniappUser>(`/users/${id}/membership`, {
     method: "PUT",
     body: JSON.stringify({ membership_expires_at }),
+  });
+}
+
+export function assignMiniappUserHealthManager(
+  id: number,
+  data: { mode: "random" | "specified"; assistant_id?: number },
+) {
+  return request<AdminMiniappUser>(`/users/${id}/health-manager`, {
+    method: "PUT",
+    body: JSON.stringify(data),
   });
 }
 

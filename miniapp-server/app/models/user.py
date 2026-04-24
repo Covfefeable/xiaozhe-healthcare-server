@@ -16,8 +16,11 @@ class MiniappUser(BaseModel):
     status = db.Column(db.String(20), nullable=False, default="active", index=True)
     membership_status = db.Column(db.String(20), nullable=False, default="none")
     membership_expires_at = db.Column(db.DateTime, nullable=True)
+    health_manager_id = db.Column(db.BigInteger, db.ForeignKey("admin_assistants.id"), nullable=True, index=True)
     last_login_at = db.Column(db.DateTime, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True, index=True)
+
+    health_manager = db.relationship("Assistant", lazy="joined")
 
 
 class MiniappUserMembership(BaseModel):

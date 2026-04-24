@@ -103,6 +103,7 @@ class ChatService:
 
     @staticmethod
     def get_or_create_health_manager_conversation(user: MiniappUser) -> dict:
+        assistant = ChatService._resolve_health_manager(user)
         conversation = ChatConversation.query.filter(
             ChatConversation.conversation_type == "single",
             ChatConversation.target_type == "assistant",
@@ -110,19 +111,9 @@ class ChatService:
             ChatConversation.deleted_at.is_(None),
         ).first()
         if conversation:
+            ChatService._sync_health_manager_conversation(conversation, assistant)
+            db.session.commit()
             return ChatService.serialize_conversation(conversation, user)
-
-        assistant = (
-            Assistant.query.filter(
-                Assistant.status == "active",
-                Assistant.assistant_type == "health_manager",
-                Assistant.deleted_at.is_(None),
-            )
-            .order_by(func.random())
-            .first()
-        )
-        if not assistant:
-            raise ChatError("暂无可用健康管家", 404)
 
         conversation = ChatConversation(
             conversation_type="single",
@@ -150,6 +141,8 @@ class ChatService:
         ).first()
         if not target_user:
             raise ChatError("未找到该手机号用户", 404)
+        if assistant.assistant_type == "health_manager":
+            target_user.health_manager_id = assistant.id
 
         conversation = ChatConversation.query.filter(
             ChatConversation.conversation_type == "single",
@@ -682,6 +675,50 @@ class ChatService:
             "avatar_url": StorageService.sign_url(user.avatar_object_key),
             "membership_status": user.membership_status,
         }
+
+    @staticmethod
+    def _resolve_health_manager(user: MiniappUser) -> Assistant:
+        assistant = None
+        if user.health_manager_id:
+            assistant = Assistant.query.filter(
+                Assistant.id == user.health_manager_id,
+                Assistant.status == "active",
+                Assistant.assistant_type == "health_manager",
+                Assistant.deleted_at.is_(None),
+            ).first()
+        if not assistant:
+            assistant = (
+                Assistant.query.filter(
+                    Assistant.status == "active",
+                    Assistant.assistant_type == "health_manager",
+                    Assistant.deleted_at.is_(None),
+                )
+                .order_by(func.random())
+                .first()
+            )
+        if not assistant:
+            raise ChatError("暂无可用健康管家", 404)
+        if user.health_manager_id != assistant.id:
+            user.health_manager_id = assistant.id
+        return assistant
+
+    @staticmethod
+    def _sync_health_manager_conversation(conversation: ChatConversation, assistant: Assistant) -> None:
+        has_active_member = ChatService._is_member(conversation.id, "assistant", assistant.id)
+        if conversation.assistant_id == assistant.id and conversation.title == assistant.name and has_active_member:
+            return
+        conversation.assistant_id = assistant.id
+        conversation.title = assistant.name
+        existing_members = ChatConversationMember.query.filter(
+            ChatConversationMember.conversation_id == conversation.id,
+            ChatConversationMember.member_type == "assistant",
+            ChatConversationMember.deleted_at.is_(None),
+        ).all()
+        now = datetime.utcnow()
+        for member in existing_members:
+            if member.member_id != assistant.id:
+                member.deleted_at = now
+        ChatService._ensure_conversation_member(conversation.id, "assistant", assistant.id)
 
     @staticmethod
     def _message_preview(message_type: str, content: str) -> str:

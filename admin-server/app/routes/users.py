@@ -16,3 +16,8 @@ def get_user(user_id: int):
 @api_bp.put("/users/<int:user_id>/membership")
 def renew_membership(user_id: int):
     return users.renew_membership(user_id)
+
+
+@api_bp.put("/users/<int:user_id>/health-manager")
+def assign_health_manager(user_id: int):
+    return users.assign_health_manager(user_id)
