@@ -68,6 +68,8 @@ class AuthService:
             "membership_expire_date": beijing_strftime(user.membership_expires_at, "%Y-%m-%d")
             if user.membership_expires_at
             else "",
+            "health_manager_id": str(user.health_manager_id) if user.health_manager_id else "",
+            "health_manager_name": user.health_manager.name if user.health_manager and user.health_manager.deleted_at is None else "",
         }
 
     @staticmethod

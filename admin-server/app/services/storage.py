@@ -21,6 +21,8 @@ BIZ_TYPE_DIRS = {
     "doctor_avatar": "avatars/doctors",
     "assistant_avatar": "avatars/assistants",
     "customer_service_avatar": "avatars/customer-services",
+    "customer_service_chat_image": "chat/customer-services/images",
+    "customer_service_chat_video": "chat/customer-services/videos",
 }
 
 MARKDOWN_SIGNED_URL_EXPIRES = 3650 * 24 * 60 * 60

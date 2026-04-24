@@ -673,3 +673,115 @@ export function updateAgreement(type: AgreementType, data: AgreementPayload) {
     body: JSON.stringify(data),
   });
 }
+
+export type CustomerServiceChatMessageType = "text" | "image" | "video" | "assistant_card";
+
+export type CustomerServiceChatConversation = {
+  id: string;
+  conversation_type: string;
+  target_type: string;
+  target_id: string;
+  target_name: string;
+  target_title: string;
+  target_label: string;
+  target_avatar: string;
+  last_message_preview: string;
+  last_message_type: string;
+  last_message_at: string | null;
+  unread_count: number;
+};
+
+export type CustomerServiceChatConversationListParams = {
+  page?: number;
+  page_size?: number;
+};
+
+export type CustomerServiceChatAttachment = {
+  id?: string;
+  file_type: "image" | "video";
+  file_object_key?: string;
+  file_url: string;
+  thumbnail_object_key?: string;
+  thumbnail_url?: string;
+  file_name?: string;
+  mime_type?: string;
+  file_size?: number;
+  duration_seconds?: number;
+  width?: number;
+  height?: number;
+};
+
+export type AssistantCardPayload = {
+  assistant_id: string;
+  assistant_name: string;
+  assistant_type: AssistantType;
+  assistant_phone: string;
+  assistant_avatar: string;
+  assistant_avatar_object_key?: string;
+  assistant_title: string;
+  message?: string;
+};
+
+export type CustomerServiceChatMessage = {
+  id: string;
+  conversation_id: string;
+  sender_type: "user" | "customer_service" | "system";
+  sender_id: string;
+  sender_name: string;
+  sender_avatar: string;
+  sender_role_label: string;
+  is_mine: boolean;
+  message_type: CustomerServiceChatMessageType;
+  content: string;
+  status: string;
+  sent_at: string | null;
+  card_payload?: AssistantCardPayload | null;
+  attachments: CustomerServiceChatAttachment[];
+};
+
+export function getCustomerServiceChatConversations(params: CustomerServiceChatConversationListParams = {}) {
+  return request<{
+    items: CustomerServiceChatConversation[];
+    pagination: { page: number; page_size: number; total: number };
+  }>(`/customer-service-chat/conversations${buildQuery(params)}`);
+}
+
+export function getCustomerServiceChatMessages(conversationId: string, beforeId?: string) {
+  const query = beforeId ? `?before_id=${encodeURIComponent(beforeId)}` : "";
+  return request<{ items: CustomerServiceChatMessage[] }>(
+    `/customer-service-chat/conversations/${conversationId}/messages${query}`,
+  );
+}
+
+export function sendCustomerServiceChatMessage(
+  conversationId: string,
+  data: {
+    message_type: "text" | "image" | "video";
+    content?: string;
+    attachments?: CustomerServiceChatAttachment[];
+  },
+) {
+  return request<CustomerServiceChatMessage>(`/customer-service-chat/conversations/${conversationId}/messages`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function sendCustomerServiceHealthManagerCard(
+  conversationId: string,
+  data: { mode: "random" | "specified"; assistant_id?: number },
+) {
+  return request<CustomerServiceChatMessage>(
+    `/customer-service-chat/conversations/${conversationId}/health-manager-card`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export function markCustomerServiceChatRead(conversationId: string) {
+  return request<null>(`/customer-service-chat/conversations/${conversationId}/read`, {
+    method: "POST",
+  });
+}

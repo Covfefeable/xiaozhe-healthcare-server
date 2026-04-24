@@ -2,6 +2,7 @@ from .base import BaseModel
 from .admin_user import AdminUser
 from .agreement import Agreement, AgreementType
 from .banner import Banner
+from .chat import ChatConversation, ChatConversationMember, ChatMessage, ChatMessageAttachment
 from .department import Department
 from .doctor import Doctor
 from .news import News
@@ -16,6 +17,10 @@ __all__ = [
     "Assistant",
     "Banner",
     "BaseModel",
+    "ChatConversation",
+    "ChatConversationMember",
+    "ChatMessage",
+    "ChatMessageAttachment",
     "CustomerService",
     "Department",
     "Doctor",

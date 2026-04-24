@@ -7,6 +7,7 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  MessageOutlined,
   PictureOutlined,
   ShoppingOutlined,
   ProfileOutlined,
@@ -56,6 +57,7 @@ const text = {
   doctors: "\u533b\u751f\u7ba1\u7406",
   assistants: "\u52a9\u7406\u7ba1\u7406",
   customerServices: "\u5ba2\u670d\u7ba1\u7406",
+  customerServiceMessages: "\u5ba2\u670d\u6d88\u606f",
   emptyTitle: "\u6682\u65e0\u5185\u5bb9",
   emptyDescription: "\u8bf7\u4ece\u4e1a\u52a1\u9700\u6c42\u5f00\u59cb\u9010\u6b65\u642d\u5efa\u9875\u9762\u3002",
   collapse: "\u6536\u8d77\u83dc\u5355",
@@ -119,6 +121,11 @@ const menuItems = [
     ],
   },
   {
+    key: "customer-service-messages",
+    icon: <MessageOutlined />,
+    label: text.customerServiceMessages,
+  },
+  {
     key: "news",
     icon: <FileTextOutlined />,
     label: text.news,
@@ -170,6 +177,8 @@ export function AdminShell({ children }: AdminShellProps) {
       ? "assistants"
     : pathname.startsWith("/customer-services")
       ? "customer-services"
+    : pathname.startsWith("/customer-service-messages")
+      ? "customer-service-messages"
     : pathname.startsWith("/news")
       ? "news"
       : "home";
@@ -190,6 +199,8 @@ export function AdminShell({ children }: AdminShellProps) {
         ? text.assistants
       : activeKey === "customer-services"
         ? text.customerServices
+      : activeKey === "customer-service-messages"
+        ? text.customerServiceMessages
       : activeKey === "news"
         ? text.news
       : activeKey === "agreement-user"
@@ -249,6 +260,10 @@ export function AdminShell({ children }: AdminShellProps) {
     }
     if (key === "customer-services") {
       router.push("/customer-services");
+      return;
+    }
+    if (key === "customer-service-messages") {
+      router.push("/customer-service-messages");
       return;
     }
     if (key === "news") {

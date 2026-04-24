@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from sqlalchemy import func, or_
@@ -625,6 +626,7 @@ class ChatService:
             "content": message.content or "",
             "status": message.status,
             "sent_at": beijing_iso(message.sent_at),
+            "card_payload": ChatService._parse_card_payload(message),
             "attachments": [
                 {
                     "id": str(item.id),
@@ -726,7 +728,21 @@ class ChatService:
             return "[图片]"
         if message_type == "video":
             return "[视频]"
+        if message_type == "assistant_card":
+            return "[健康管家名片]"
         return content.strip()[:255]
+
+    @staticmethod
+    def _parse_card_payload(message: ChatMessage) -> dict | None:
+        if message.message_type != "assistant_card":
+            return None
+        try:
+            payload = json.loads(message.content or "{}")
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(payload, dict):
+            return None
+        return payload
 
     @staticmethod
     def _add_join_messages(conversation: ChatConversation, joined_members: list[ChatConversationMember]) -> None:
